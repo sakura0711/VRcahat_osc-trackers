@@ -1,6 +1,8 @@
 # Phase 0 — OSC Tracker 可行性實測
 
-此測試不需要手機，也不修改 Avatar 或 VRChat client。它只驗證固定合成 tracker 能否被目前環境接收、校正、驅動 IK 並讓遠端玩家看到；**目前尚未完成任何 VRChat 實測，Phase 0 尚未通過**。
+此測試不需要手機，也不修改 Avatar 或 VRChat client。它只驗證固定合成 tracker 能否被目前環境接收、校正、驅動 IK 並讓遠端玩家看到；**Phase 0 尚未通過**。
+
+2026-11-04 更新：Desktop 的 OSC Debug 已顯示 Hip + Feet 封包；Avatar 未動，FBT 校正未完成，遠端未驗證。若無實體頭顯，後續測試見 [虛擬 SteamVR Phase 0 計畫](../VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ## 準備
 

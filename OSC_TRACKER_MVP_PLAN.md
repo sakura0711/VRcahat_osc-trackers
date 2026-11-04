@@ -94,6 +94,8 @@ VRChat 文件指出：資料有誤差時，少送幾個 tracker 往往會得到�
 - 若 VR 模式通過：以 `trackers` 作為正式 MVP 主線。
 - 若純 Desktop 不通過且使用者沒有可用 VR runtime：不得承諾「購買 Avatar 的全身 IK」；保留 `parameters` 為 Desktop fallback，另開立「官方支援的 VR runtime／虛擬追蹤來源」研究項目。
 
+2026-11-04 實測已確認 Desktop 的 OSC Debug 收到探針封包，但 Avatar 未動且未完成 FBT 校正。無實體頭顯的 [虛擬 SteamVR Phase 0 計畫](VIRTUAL_HMD_PHASE0_PLAN.md) 是後續獨立驗證路線；虛擬驅動的 FBT 成功不能自動算作 OSC Tracker 路線通過。
+
 ### Phase 1 — Tracker 輸出基礎（0.5–1 天）
 
 1. 建立 `TrackerOutput` 與 OSC Vector3 encoder，固定使用 VRChat 定義的 tracker slot。
