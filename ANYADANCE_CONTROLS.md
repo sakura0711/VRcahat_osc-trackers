@@ -29,7 +29,7 @@
 | 左腳 tracker | |
 | 右腳 tracker | |
 
-- `AnyaDance.exe` 一打開就以 **60 Hz** 推送六裝置 T 姿勢。
+- `AnyaDance.exe` 一打開就以 **60 Hz** 推送六裝置 T 姿勢；目前 Phase 0 OSC 隔離測試已把 SteamVR 的 `driver_anyadance.enable_trackers` 設為 `false`，因此驅動只註冊 HMD 與左右控制器。原設定已備份，詳見 [虛擬 HMD Phase 0 計畫](VIRTUAL_HMD_PHASE0_PLAN.md)。
 - 封包停止後，SteamVR 仍看到各裝置停在最後姿勢，保持連線、有效、`TrackingResult_Running_OK`。
 - 正常退出時送出一幀中性輸入。
 
@@ -167,7 +167,7 @@ GPU 渲染時間約按縮放倍數平方成長（4K ≈ 1080p 的四倍）。同
 4. **同時按住 `Z` + `X`**（左右扳機）鎖定校正。
 5. 需要時用滑鼠在裝置方框調整髖 / 雙腳位置，讓校正球貼合 Avatar 身體比例。
 
-> 待驗證：AnyaDance 的 tracker 在校正後是否真的驅動 Avatar 髖 / 腳移動。若 tracker 為固定姿勢且未播放動作，校正成功也不代表腳會「動」。Phase 0 通過標準見 [VIRTUAL_HMD_PHASE0_PLAN.md](VIRTUAL_HMD_PHASE0_PLAN.md)。
+> 已證實：2026-11-05 使用者完成 AnyaDance tracker 的 FBT 校正，拖動髖／腳方框後，本機 Avatar 下半身跟著動。目前已暫停註冊這三個 SteamVR tracker，以便隔離驗證 OSC；OSC 驅動本機動作與遠端同步仍待驗證。Phase 0 通過標準見 [VIRTUAL_HMD_PHASE0_PLAN.md](VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ---
 
