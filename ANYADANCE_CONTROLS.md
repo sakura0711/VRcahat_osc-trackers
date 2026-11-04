@@ -49,6 +49,17 @@
 
 **FBT 校正「同時扣兩扳機」＝同時按住 `Z` + `X`。**（AnyaDance 必須在焦點）
 
+### VRChat 選單（重要限制）
+
+| 選單 | 怎麼開 |
+|---|---|
+| 快速選單（Quick Menu） | `M`（右 B）。**Calibrate FBT 在這裡。** |
+| 動作選單（Action Menu） | VRChat 預設綁「按壓搖桿」。**AnyaDance 打不開** |
+
+- AnyaDance 驅動（`virtual_device.cpp:940-961`）只建立搖桿 `x`/`y` 軸，**沒有 `thumbstick/click`、`trackpad/click` 元件**，送不出搖桿按壓。
+- `application_menu/click` 元件存在，但 AnyaDance 沒有鍵對應它（`input.cpp` 綁定表只有 WASD/QE/Space/M/V/Z/X）。
+- 要用動作選單：`M` 開快速選單 → Settings → Bindings，改綁到可送出的鍵（扳機或 grip）；注意與既有功能衝突。Phase 0 校正用不到動作選單。
+
 ---
 
 ## 3. 滑鼠操作（六個裝置方框）
