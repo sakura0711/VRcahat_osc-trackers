@@ -43,7 +43,7 @@ Android 手機相機
 
 ## 3. OSC Tracker 協定契約
 
-| ID／端點 | 人體對應 | MVP 優先順序 |
+| 本專案暫定 ID／端點 | 人體對應 | MVP 優先順序 |
 | --- | --- | --- |
 | `1` | Hip | 必要 |
 | `2` | Chest | 第二階段 |
@@ -51,6 +51,8 @@ Android 手機相機
 | `5` / `6` | Left / Right Knee | 最後加入 |
 | `7` / `8` | Left / Right Elbow | 第二階段 |
 | `head`（特殊名稱，不是 ID 9） | 座標系與 yaw 對齊參考 | 建議 |
+
+上表的 ID 對應是本專案的暫定慣例；官方文件列出 ID 1–8 及支援的人體部位，但未指定兩者的固定映射。實際配對須透過 VRChat 校正驗證。
 
 每個一般 tracker 的端點為：
 
@@ -163,7 +165,7 @@ VRChat 文件指出：資料有誤差時，少送幾個 tracker 往往會得到�
 
 ## 9. Git 與交付策略
 
-目前 repository 尚未建立初始 commit，不能形成真正可回退的分支基線。實作開始前應先由使用者確認初始 commit 的範圍，然後：
+基線與分支已建立；本次工作在 `feat/osc-trackers`，`master` 保留既有六參數 MVP：
 
 ```text
 master（現有六參數 MVP 基線）
@@ -175,6 +177,6 @@ master（現有六參數 MVP 基線）
 ## 10. 下一步
 
 1. 決定使用者是否具備可進入 VR 模式的環境（PCVR 或 Quest 等），並執行 Phase 0。
-2. 若 Phase 0 通過，建立基線 commit 後開 `feat/osc-trackers`。
-3. 先完成無影像依賴的 tracker probe 與協定測試，再接上手機 landmark。
+2. 在 `feat/osc-trackers` 完成探針與實機紀錄；Phase 0 通過後才繼續 tracker 輸出。
+3. 以 [Phase 0 實測步驟](windows/TRACKER_PHASE0.md) 檢查無影像依賴的 tracker probe 與遠端可見性，再接上手機 landmark。
 4. 以 3-tracker（Hip + Feet）達成遠端可見的基本全身姿勢後，才擴充至 5 或 8 tracker。

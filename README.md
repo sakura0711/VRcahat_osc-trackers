@@ -29,3 +29,7 @@ Unity Hub、Creator Companion、VPM 與 VRChat 指定的 Unity 2022.3.22f1 已�
 Unity Hub 登入及授權已完成。官方 Robot PC 範例已另存為 `Assets/VRChatTrackRobot.unity`，並建立六參數 Animator；Unity 骨骼及圖層測試通過，VRChat SDK 本機 **Build & Test** 已完成。使用者已確認直接 OSC 驅動六個動作、自然待機和 WASD 共存；下一步需依 [Avatar 設定](VRChatTrackAvatar/AVATAR_SETUP.md) 以手機輸入重新驗證。該測試 Avatar 僅供本機測試，尚未驗證遠端同步。
 
 參考：[VRChat 目前支援的 Unity 版本](https://creators.vrchat.com/sdk/upgrade/current-unity-version/)、[Avatar 本機測試](https://creators.vrchat.com/avatars/#local-avatar-testing)、[VPM 原始碼管理](https://vcc.docs.vrchat.com/vpm/source-control/)。
+
+## 原生 OSC Tracker 新主線
+
+目前目標已改為使用手機姿勢驅動 VRChat 原生 FBT／IK，讓未修改的正常或購買 Avatar 可由遠端玩家看到；先前六參數 Animator 保留作為自製 Avatar 的 fallback。詳見 [OSC Tracker MVP 計畫](OSC_TRACKER_MVP_PLAN.md) 與 [Phase 0 實測步驟](windows/TRACKER_PHASE0.md)。探針與自動化封包測試不代表 VRChat 已接收、完成校正或遠端可見；Phase 0 仍待實機驗證，純 Desktop 支援亦未確認。舊計畫及本頁上述段落是既有六參數成果紀錄。

@@ -79,3 +79,7 @@ python -B soak_loopback.py --duration 600 --fps 15
 4. 手機 FPS、ACK RTT、遺失與溫度紀錄方式見 `android/README.md`。彙整 Windows 的 `FINAL`，並記下是否一直前景運行、方向是否正確及是否發熱／降頻。以額外錄影裝置逐格量測前，不報告人體到螢幕的端到端延遲。
 
 `captures` 已由 Git 忽略，日誌不含相機影像或 landmark 座標，但可能包含私人網路位址；請自行保留於可信任的電腦。
+
+## Phase 0：原生 OSC Tracker 探針
+
+新的主線與驗收條件見 [OSC Tracker MVP 計畫](../OSC_TRACKER_MVP_PLAN.md)。`tracker_probe.py` 不依賴手機，對本機送出合成髖＋雙腳 tracker，供 VRChat 校正與遠端觀察；完整的操作和紀錄表見 [Phase 0 實測](TRACKER_PHASE0.md)。自動化 loopback 測試不代表 VRChat 接收或遠端同步。Phase 0 尚未實測通過，現有六參數輸出仍保留。
