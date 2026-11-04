@@ -1,0 +1,93 @@
+diff --git a/driver/resources/input/anyadance_controller_profile.json b/driver/resources/input/anyadance_controller_profile.json
+index 859f911..cf8fd20 100644
+--- a/driver/resources/input/anyadance_controller_profile.json
++++ b/driver/resources/input/anyadance_controller_profile.json
+@@ -48,2 +48,3 @@
+       "type": "joystick",
++      "click": true,
+       "order": 3
+diff --git a/src/core/input_state.cpp b/src/core/input_state.cpp
+index ce04943..98b5775 100644
+--- a/src/core/input_state.cpp
++++ b/src/core/input_state.cpp
+@@ -63,2 +63,3 @@ void KeyboardInputState::UpdateFrameInputs(FrameState& frame) const {
+     right.b_click = m_down[Slot(ToolKey::M)];
++    right.system_click = m_down[Slot(ToolKey::R)];
+ 
+diff --git a/src/core/input_state.h b/src/core/input_state.h
+index 4461eee..46bec39 100644
+--- a/src/core/input_state.h
++++ b/src/core/input_state.h
+@@ -21,2 +21,3 @@ enum class ToolKey : std::size_t {
+     X,
++    R,
+     Count,
+diff --git a/src/driver/virtual_device.cpp b/src/driver/virtual_device.cpp
+index 1fc16a8..cfceb24 100644
+--- a/src/driver/virtual_device.cpp
++++ b/src/driver/virtual_device.cpp
+@@ -611,2 +611,3 @@ VirtualDevice::VirtualDevice(VirtualDeviceDefinition definition)
+       m_gripTouch(k_ulInvalidInputComponentHandle),
++      m_thumbstickClick(k_ulInvalidInputComponentHandle),
+       m_joystickX(k_ulInvalidInputComponentHandle),
+@@ -660,2 +661,3 @@ void VirtualDevice::Deactivate() {
+     m_gripTouch = k_ulInvalidInputComponentHandle;
++    m_thumbstickClick = k_ulInvalidInputComponentHandle;
+     m_joystickX = k_ulInvalidInputComponentHandle;
+@@ -728,2 +730,3 @@ void VirtualDevice::ApplyPoseSample(const PoseSample& sample) {
+         m_currentGripValue = std::clamp(safeSample.grip_value, 0.0f, 1.0f);
++        m_currentThumbstickClick = safeSample.system_click;
+         m_currentJoystickX = std::clamp(safeSample.joystick_x, -1.0f, 1.0f);
+@@ -763,2 +766,3 @@ void VirtualDevice::ApplyInvalidPose() {
+     m_currentGripValue = 0.0f;
++    m_currentThumbstickClick = false;
+     m_currentJoystickX = 0.0f;
+@@ -802,2 +806,5 @@ void VirtualDevice::UpdateInputs() {
+     }
++    if (m_thumbstickClick != k_ulInvalidInputComponentHandle) {
++        VRDriverInput()->UpdateBooleanComponent(m_thumbstickClick, m_currentThumbstickClick, 0.0);
++    }
+     if (m_joystickX != k_ulInvalidInputComponentHandle) {
+@@ -937,2 +944,3 @@ void VirtualDevice::ActivateController(PropertyContainerHandle_t container) {
+     VRDriverInput()->CreateBooleanComponent(container, "/input/grip/click", &m_gripClick);
++    VRDriverInput()->CreateBooleanComponent(container, "/input/thumbstick/click", &m_thumbstickClick);
+     // Knuckles locomotion lives on the thumbstick; the joystick_x/y wire values
+diff --git a/src/driver/virtual_device.h b/src/driver/virtual_device.h
+index c7396ae..85bde68 100644
+--- a/src/driver/virtual_device.h
++++ b/src/driver/virtual_device.h
+@@ -72,2 +72,3 @@ private:
+     vr::VRInputComponentHandle_t m_gripTouch;
++    vr::VRInputComponentHandle_t m_thumbstickClick;
+     vr::VRInputComponentHandle_t m_joystickX;
+@@ -85,2 +86,3 @@ private:
+     float m_currentGripValue = 0.0f;
++    bool m_currentThumbstickClick = false;
+     float m_currentJoystickX = 0.0f;
+diff --git a/src/ui/input.cpp b/src/ui/input.cpp
+index 66a0aea..648741a 100644
+--- a/src/ui/input.cpp
++++ b/src/ui/input.cpp
+@@ -216,2 +216,3 @@ KeyInfo DescribeKey(ToolKey key) {
+     case ToolKey::X: return {"X", "right trigger"};
++    case ToolKey::R: return {"R", "right thumbstick click"};
+     case ToolKey::Count: break;
+@@ -242,3 +243,3 @@ void HandleKeyboard(HWND hwnd) {
+         {'Q', ToolKey::Q}, {'E', ToolKey::E}, {VK_SPACE, ToolKey::Space}, {'M', ToolKey::M},
+-        {'V', ToolKey::V}, {'Z', ToolKey::Z}, {'X', ToolKey::X},
++        {'V', ToolKey::V}, {'Z', ToolKey::Z}, {'X', ToolKey::X}, {'R', ToolKey::R},
+     };
+diff --git a/tests/test_input.cpp b/tests/test_input.cpp
+index 242899c..cb159e8 100644
+--- a/tests/test_input.cpp
++++ b/tests/test_input.cpp
+@@ -47,2 +47,9 @@ void TestInput() {
+ 
++    keys.HandleKey(ToolKey::R, true, false);
++    keys.UpdateFrameInputs(frame);
++    EXPECT_TRUE(frame.controllers[1].system_click);
++    keys.HandleKey(ToolKey::R, false, false);
++    keys.UpdateFrameInputs(frame);
++    EXPECT_FALSE(frame.controllers[1].system_click);
++
+     keys.HandleKey(ToolKey::M, true, false);
