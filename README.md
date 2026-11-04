@@ -32,4 +32,4 @@ Unity Hub 登入及授權已完成。官方 Robot PC 範例已另存為 `Assets/
 
 ## 原生 OSC Tracker 新主線
 
-目前目標已改為使用手機姿勢驅動 VRChat 原生 FBT／IK，讓未修改的正常或購買 Avatar 可由遠端玩家看到；先前六參數 Animator 保留作為自製 Avatar 的 fallback。詳見 [OSC Tracker MVP 計畫](OSC_TRACKER_MVP_PLAN.md) 與 [Phase 0 實測步驟](windows/TRACKER_PHASE0.md)。探針與自動化封包測試不代表 VRChat 已接收、完成校正或遠端可見；Phase 0 仍待實機驗證，純 Desktop 支援亦未確認。舊計畫及本頁上述段落是既有六參數成果紀錄。
+目前目標已改為使用手機姿勢驅動 VRChat 原生 FBT／IK，讓未修改的正常或購買 Avatar 可由遠端玩家看到；先前六參數 Animator 保留作為自製 Avatar 的 fallback。詳見 [OSC Tracker MVP 計畫](OSC_TRACKER_MVP_PLAN.md) 與 [Phase 0 實測步驟](windows/TRACKER_PHASE0.md)。2026-11-05 已在虛擬 HMD 的 VR 模式、停用 AnyaDance 自帶 SteamVR tracker 後，以合成 OSC 髖與雙腳完成 VRChat FBT 校正；使用者在本機鏡子確認兩輪左腳抬起並放下。手機姿勢尚未接入原生 tracker，購買 Avatar 類型與私人房間遠端同步仍待驗收，因此 Phase 0 尚未通過，也尚未實作 TrackerOutput；純 Desktop 支援亦未確認。舊計畫及本頁上述段落是既有六參數成果紀錄。

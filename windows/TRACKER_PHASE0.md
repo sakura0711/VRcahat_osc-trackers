@@ -2,11 +2,12 @@
 
 此測試不需要手機，也不修改 Avatar 或 VRChat client。它只驗證固定合成 tracker 能否被目前環境接收、校正、驅動 IK 並讓遠端玩家看到；**Phase 0 尚未通過**。
 
-2026-11-04 更新：Desktop 的 OSC Debug 已顯示 Hip + Feet 封包；Avatar 未動，FBT 校正未完成，遠端未驗證。若無實體頭顯，後續測試見 [虛擬 SteamVR Phase 0 計畫](../VIRTUAL_HMD_PHASE0_PLAN.md)。
+2026-11-04 Desktop 測試：OSC Debug 已顯示 Hip + Feet 封包；Avatar 未動，FBT 校正未完成。2026-11-05 虛擬 HMD 的 VR 模式測試：停用 AnyaDance 自帶 SteamVR tracker 後，本探針的髖＋雙腳 OSC tracker 已在 VRChat 完成校正映射；使用者在本機鏡子確認兩輪左腳抬起並放下。購買 Avatar 類型與遠端玩家觀察尚未紀錄，Phase 0 尚未通過。詳見 [虛擬 SteamVR Phase 0 計畫與紀錄](../VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ## 準備
 
 - 電腦上的 VRChat、Python 3.12；VR 測試需要可正常使用的 HMD、控制器和 VR runtime。Desktop 測試使用同一台電腦的 Desktop 模式。請在舒適、安全的空間進行，站姿校正時避免撞到周圍物品。
+- 六點 FBT 的六個點是頭、雙手、髖與雙腳；若 HMD 和雙控制器已提供前三點，本探針只需送髖與雙腳三個 OSC tracker。[VRChat OSC Trackers](https://docs.vrchat.com/docs/osc-trackers) 也以只送髖和雙腳作為可行組合。
 - 一位遠端玩家，在同一個私人房間；使用正常、未為本專案修改的 Humanoid Avatar。紀錄 Avatar 名稱／是否為購買 Avatar；不需提供 Unity 原始檔。
 - 在 VRChat 啟用 OSC，確認本機輸入 UDP 埠（預設 9000），並關閉其他 OSC tracker 發送程式及可能競爭的實體 tracker 輸入；記錄實際環境。不要同時執行本專案 receiver 的 OSC 輸出。
 - 在 VRChat 將身高設定為實際身高，保留預設 playspace 或記錄偏移；校正時保持站直、面向前方。先開鏡子並在 Tracking & IK 中尋找 tracker 顯示設定。介面名稱會隨版本變更。

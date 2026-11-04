@@ -82,4 +82,4 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 ## Phase 0：原生 OSC Tracker 探針
 
-新的主線與驗收條件見 [OSC Tracker MVP 計畫](../OSC_TRACKER_MVP_PLAN.md)。`tracker_probe.py` 不依賴手機，對本機送出合成髖＋雙腳 tracker，供 VRChat 校正與遠端觀察；完整的操作和紀錄表見 [Phase 0 實測](TRACKER_PHASE0.md)。自動化 loopback 測試不代表 VRChat 接收或遠端同步。Phase 0 尚未實測通過，現有六參數輸出仍保留。
+新的主線與驗收條件見 [OSC Tracker MVP 計畫](../OSC_TRACKER_MVP_PLAN.md)。`tracker_probe.py` 不依賴手機，對本機送出合成髖＋雙腳 tracker，供 VRChat 校正與遠端觀察；完整的操作和紀錄表見 [Phase 0 實測](TRACKER_PHASE0.md)。2026-11-05 已在隔離 AnyaDance 自帶 SteamVR tracker 的 VR 模式完成 OSC 接收、髖／雙腳校正與兩輪本機左腳抬起／放下。私人房間遠端驗收與購買 Avatar 類型仍待確認，Phase 0 尚未通過；自動化 loopback 測試也不能取代遠端觀察。現有六參數輸出仍保留，TrackerOutput 尚未開始。

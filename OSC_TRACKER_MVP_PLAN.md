@@ -1,6 +1,7 @@
 # VRChat 原生 OSC Tracker MVP：參考與實作計畫
 
-**狀態：規劃草案（2026-11-04，Asia/Taipei）**  
+**狀態：Phase 0 本機 OSC Tracker 驗證完成；私人房間遠端驗收待使用者通知（2026-11-05，Asia/Taipei）。Phase 1 尚未開始。**
+
 **本文件目的：** 將產品主線從「特定 Avatar 的 Animator 參數控制」調整為「由手機影像驅動 VRChat 原生 Tracker／全身 IK」，並保留現有參數模式作為可回退的自製 Avatar 進階功能。
 
 ## 1. 產品目標與重要前提
@@ -95,6 +96,8 @@ VRChat 文件指出：資料有誤差時，少送幾個 tracker 往往會得到�
 - 若純 Desktop 不通過且使用者沒有可用 VR runtime：不得承諾「購買 Avatar 的全身 IK」；保留 `parameters` 為 Desktop fallback，另開立「官方支援的 VR runtime／虛擬追蹤來源」研究項目。
 
 2026-11-04 實測已確認 Desktop 的 OSC Debug 收到探針封包，但 Avatar 未動且未完成 FBT 校正。無實體頭顯的 [虛擬 SteamVR Phase 0 計畫](VIRTUAL_HMD_PHASE0_PLAN.md) 是後續獨立驗證路線；虛擬驅動的 FBT 成功不能自動算作 OSC Tracker 路線通過。
+
+2026-11-05 VR 模式進展：AnyaDance 只提供虛擬 HMD 與雙控制器，三個 AnyaDance SteamVR tracker 已停用；本專案 `tracker_probe.py` 以 OSC 送出髖與雙腳。VRChat OSC Debug 顯示探針封包，日誌把 `OSCTracker1/3/4` 校正為髖 13、左腳 11、右腳 12；使用者在本機鏡子確認兩輪左腳抬起並放下。這證實合成 OSC tracker 的**本機接收、校正與 IK 動作**，不代表手機姿勢已接入，也不代表購買 Avatar 的遠端同步已通過。Avatar 類型與私人房間遠端觀察尚未紀錄；Phase 0 通過標準仍未達成。詳見 [實測紀錄](VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ### Phase 1 — Tracker 輸出基礎（0.5–1 天）
 
