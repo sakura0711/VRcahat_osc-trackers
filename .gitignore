@@ -1,0 +1,23 @@
+# Generated Android and Python files
+**/.gradle/
+**/build/
+**/local.properties
+**/.idea/
+*.iml
+**/captures/
+__pycache__/
+*.py[cod]
+.venv/
+
+# Generated Unity files
+**/Library/
+**/Temp/
+**/Obj/
+**/Logs/
+**/UserSettings/
+**/Builds/
+
+# The VRChat SDK is restored from Packages/vpm-manifest.json by VPM.
+# Keep the resolver package in source control, but do not vendor the SDK itself.
+VRChatTrackAvatar/Packages/com.vrchat.avatars/
+VRChatTrackAvatar/Packages/com.vrchat.base/

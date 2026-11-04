@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">VRChat Track MVP</string>
+    <string name="camera_starting">正在啟動前鏡頭…</string>
+    <string name="camera_ready">前鏡頭與 MediaPipe 已啟動，等待姿勢資料…</string>
+    <string name="camera_permission_required">需要相機權限才能進行姿勢辨識。</string>
+    <string name="camera_permission_denied">未取得相機權限。請在系統設定允許權限後重試。</string>
+    <string name="camera_error_prefix">相機啟動失敗： </string>
+    <string name="retry_camera">重新嘗試相機</string>
+    <string name="switch_to_gpu">切換至 GPU</string>
+    <string name="switch_to_cpu">切換至 CPU</string>
+    <string name="benchmark_start">比較 CPU / GPU（約 1 分鐘）</string>
+    <string name="receiver_host_hint">電腦的私人 IPv4</string>
+    <string name="receiver_port_hint">UDP 埠</string>
+    <string name="receiver_port_default">8765</string>
+    <string name="network_start">開始傳送</string>
+    <string name="network_stop">停止傳送</string>
+    <string name="network_stopped">Wi-Fi 傳輸：已停止</string>
+    <string name="network_waiting">Wi-Fi 傳輸：等待 Windows ACK…</string>
+    <string name="network_status">Wi-Fi：%1$s｜已送 %2$d / ACK %3$d｜RTT p50 %4$s / p95 %5$s ms\n覆蓋舊影格 %6$d｜ACK 逾時 %7$d｜封包 %8$d bytes</string>
+    <string name="timing_waiting">等待分段計時資料…</string>
+    <string name="timing_status">%1$s：準備 %2$.1f ms｜MediaPipe %3$.1f ms\n擷取 %4$.1f ms｜合計 %5$.1f ms</string>
+    <string name="pose_initializing">正在初始化 MediaPipe Pose Landmarker…</string>
+    <string name="pose_model_ready">MediaPipe 已就緒，正在啟動前鏡頭…</string>
+    <string name="pose_init_error_prefix">MediaPipe 初始化失敗： </string>
+    <string name="pose_error_prefix">Pose Landmarker 錯誤： </string>
+    <string name="pose_no_person">未偵測到人物</string>
+    <string name="pose_core_ready">核心關節可信</string>
+    <string name="pose_core_low_confidence">核心關節低可信度</string>
+    <string name="pose_confidence_unavailable">關鍵點未提供信心值</string>
+    <string name="pose_confidence_summary">關鍵點信心：%1$d/%2$d ≥ 0.50</string>
+    <string name="pose_status">姿勢：%1$d/33 點，world：%2$d 點，處理：%3$d ms，結果：%4$.1f FPS，%5$s</string>
+</resources>
+
