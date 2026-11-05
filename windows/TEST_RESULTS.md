@@ -4,7 +4,7 @@
 
 ## 自動測試
 
-`python -B -m unittest discover -v`：2026-11-05 最新 **41 項通過**。包含接收與 ACK、六參數校正與逾時、OSC 編碼、手動 tracker 探針、`TrackerOutput` 的 ID 3／4 對調、手機 tracker 離線座標校正，以及無 OSC 輸出的預覽器。新增安全測試確認 world landmark 低信心時整批不輸出，且站姿校正中途蹲下不會完成校正。這些是本機自動測試；VRChat 的 OSC FBT 遠端盲測另見 [Phase 0 證據](../VIRTUAL_HMD_PHASE0_PLAN.md)。
+`python -B -m unittest discover -v`：2026-11-05 最新 **45 項通過**。包含接收與 ACK、六參數校正與逾時、OSC 編碼、手動 tracker 探針、`TrackerOutput` 的 ID 3／4 對調、手機 tracker 離線座標校正，以及無 OSC 輸出的預覽器。安全測試確認 world landmark 低信心時整批不輸出，且站姿校正中途蹲下不會完成校正。診斷測試另外覆蓋多個低信心點、顯示節流下的完整計數、新工作階段與超時不重複計數，以及合成 UDP 封包經校正、動作、失追後的統計；預覽全程未建立 OSC 輸出。這些是本機自動測試；VRChat 的 OSC FBT 遠端盲測另見 [Phase 0 證據](../VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ## 單手機離線 tracker 預覽（2026-11-05）
 

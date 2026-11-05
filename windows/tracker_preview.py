@@ -13,10 +13,11 @@ import json
 import math
 import socket
 import sys
+from collections import Counter
 from typing import Any
 
 from pose_receiver import private_ipv4, serve
-from tracker_pose import TrackerCalibrationConfig, TrackerPoseCalibrator
+from tracker_pose import LANDMARK_NAMES, TrackerCalibrationConfig, TrackerPoseCalibrator
 from tracker_output import TrackerTransform
 
 
@@ -26,18 +27,55 @@ def display_transform(transform: TrackerTransform) -> dict[str, Any]:
 
 
 class TrackerPreview:
-    def __init__(self, config: TrackerCalibrationConfig, display_interval_s: float = 0.25) -> None:
+    def __init__(self, config: TrackerCalibrationConfig, display_interval_s: float = 0.25,
+                 summary_only: bool = False) -> None:
         self.controller = TrackerPoseCalibrator(config)
         self.session: str | None = None
         self.display_interval_ns = int(display_interval_s * 1e9)
         self.last_display_ns: int | None = None
+        self.last_summary_ns: int | None = None
+        self.summary_only = summary_only
+        self.frames = 0
+        self.pose_frames = 0
+        self.transform_frames = 0
+        self.sessions = 0
+        self.calibrations = 0
+        self.tracking_losses = 0
+        self.rejections: Counter[str] = Counter()
+        self.blocked_landmarks: Counter[str] = Counter()
 
     def _show(self, label: str, values: dict[str, Any]) -> None:
         print(label + " " + json.dumps(values, separators=(",", ":")), flush=True)
 
+    def summary(self) -> dict[str, Any]:
+        return {
+            "accepted_frames": self.frames,
+            "pose_frames": self.pose_frames,
+            "transform_frames": self.transform_frames,
+            "transform_frame_pct": round(100 * self.transform_frames / self.frames, 2) if self.frames else None,
+            "sessions": self.sessions,
+            "calibrations": self.calibrations,
+            "tracking_losses": self.tracking_losses,
+            "rejection_frames": dict(self.rejections),
+            "blocked_landmark_frames": dict(self.blocked_landmarks),
+        }
+
+    def _maybe_summary(self, now_ns: int) -> None:
+        if self.last_summary_ns is None:
+            self.last_summary_ns = now_ns
+        elif now_ns - self.last_summary_ns >= 5_000_000_000:
+            self._show("PREVIEW_QUALITY", self.summary())
+            self.last_summary_ns = now_ns
+
+    def report_final(self) -> None:
+        self._show("PREVIEW_FINAL", self.summary())
+
     def on_packet(self, packet: dict[str, Any], now_ns: int) -> None:
+        self.frames += 1
+        self.pose_frames += int(packet["personDetected"])
         if packet["session"] != self.session:
             self.session = packet["session"]
+            self.sessions += 1
             self.controller.reset()
             self.last_display_ns = None
             print("PREVIEW_SESSION: new phone session; stand still with both feet on the floor.", flush=True)
@@ -45,9 +83,20 @@ class TrackerPreview:
         transforms = self.controller.ingest(packet, now_ns)
         ready = self.controller.calibration is not None
         if was_ready and not ready:
+            self.tracking_losses += 1
             print("PREVIEW_LOST: calibration expired; stand still to recalibrate.", flush=True)
         if not was_ready and ready:
+            self.calibrations += 1
             self._show("PREVIEW_CALIBRATED", {"scale": round(self.controller.calibration.scale, 3)})
+        diagnostic = self.controller.diagnostic
+        if transforms:
+            self.transform_frames += 1
+        elif diagnostic.reason not in ("calibrating", "calibrated"):
+            self.rejections[diagnostic.reason] += 1
+            self.blocked_landmarks.update(LANDMARK_NAMES[index] for index in diagnostic.landmarks)
+        self._maybe_summary(now_ns)
+        if self.summary_only:
+            return
         if self.last_display_ns is not None and now_ns - self.last_display_ns < self.display_interval_ns:
             return
         self.last_display_ns = now_ns
@@ -57,13 +106,17 @@ class TrackerPreview:
         else:
             self._show("PREVIEW_WAIT", {"state": "paused" if ready else "calibrating",
                                         "person_detected": packet["personDetected"],
-                                        "standing_samples": len(self.controller.samples)})
+                                        "standing_samples": len(self.controller.samples),
+                                        "reason": diagnostic.reason,
+                                        "blocked_landmarks": [LANDMARK_NAMES[index] for index in diagnostic.landmarks]})
 
     def tick(self, now_ns: int) -> None:
         was_ready = self.controller.calibration is not None
         self.controller.tick(now_ns)
         if was_ready and self.controller.calibration is None:
+            self.tracking_losses += 1
             print("PREVIEW_LOST: no complete pose within timeout; stand still to recalibrate.", flush=True)
+        self._maybe_summary(now_ns)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -78,6 +131,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="choose the depth sign that makes standing toes point forward")
     parser.add_argument("--yaw", type=float, default=0.0, help="neutral yaw degrees; use zero for initial direction checks")
     parser.add_argument("--duration", type=float, default=60.0, help="maximum preview seconds")
+    parser.add_argument("--summary-only", action="store_true",
+                        help="show events and quality totals without per-frame coordinates")
     args = parser.parse_args(argv)
     if not private_ipv4(args.bind) or args.bind == "0.0.0.0":
         parser.error("--bind must be a specific RFC1918 or loopback IPv4 address")
@@ -100,7 +155,11 @@ def main(argv: list[str] | None = None) -> int:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.bind((args.bind, args.port))
             print(f"PREVIEW_LISTENING {args.bind}:{args.port}; no OSC socket is opened.", flush=True)
-            serve(sock, args.duration, 30.0, args.allow_sender, observer=TrackerPreview(config))
+            preview = TrackerPreview(config, summary_only=args.summary_only)
+            try:
+                serve(sock, args.duration, 30.0, args.allow_sender, observer=preview)
+            finally:
+                preview.report_final()
     except OSError as error:
         print(f"preview error: {error}", file=sys.stderr)
         return 1

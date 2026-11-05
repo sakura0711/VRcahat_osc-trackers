@@ -87,6 +87,7 @@ class TrackerPoseTests(unittest.TestCase):
             self.assertEqual(controller.ingest(pose(), moment), {})
         self.assertIsNone(controller.calibration)
         self.assertEqual(controller.samples, [])
+        self.assertEqual(controller.diagnostic.reason, "calibration_forward")
 
     def test_turning_during_neutral_window_cannot_calibrate(self):
         controller = TrackerPoseCalibrator(config())
@@ -101,6 +102,7 @@ class TrackerPoseTests(unittest.TestCase):
             self.assertEqual(controller.ingest(pose(squat=squat), moment), {})
         self.assertIsNone(controller.calibration)
         self.assertEqual(controller.samples, [])
+        self.assertEqual(controller.diagnostic.reason, "calibration_height_changed")
 
     def test_low_world_confidence_suppresses_complete_batch(self):
         controller = TrackerPoseCalibrator(config())
@@ -108,8 +110,19 @@ class TrackerPoseTests(unittest.TestCase):
         bad = pose()
         bad["worldLandmarks"][31]["visibility"] = 0.1
         self.assertEqual(controller.ingest(bad, 300_000_000), {})
+        self.assertEqual(controller.diagnostic.reason, "world_confidence")
+        self.assertEqual(controller.diagnostic.landmarks, (31,))
         self.assertEqual(set(controller.ingest(pose(), 400_000_000)),
                          {"hip", "left_foot", "right_foot"})
+
+    def test_diagnostic_lists_all_low_confidence_points(self):
+        controller = TrackerPoseCalibrator(config())
+        bad = pose()
+        for index in (27, 29, 31):
+            bad["landmarks"][index]["visibility"] = 0.1
+        self.assertEqual(controller.ingest(bad, 0), {})
+        self.assertEqual(controller.diagnostic.reason, "image_confidence")
+        self.assertEqual(controller.diagnostic.landmarks, (27, 29, 31))
 
     def test_timeout_requires_new_calibration(self):
         controller = TrackerPoseCalibrator(config())

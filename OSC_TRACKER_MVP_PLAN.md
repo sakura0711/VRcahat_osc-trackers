@@ -29,6 +29,8 @@
 
 `windows/tracker_preview.py` 已提供不送 OSC 的手機 UDP 離線預覽：沿用 receiver 的封包驗證與 ACK，顯示計算出的髖／雙腳公尺位置及 yaw。2026-11-05 使用單手機與電腦熱點，按指示觀察到右腳、左腳、蹲下及向右轉再轉回的相對方向。這是**手機到 Windows 的離線方向初驗**，沒有把手機資料送進 VRChat；詳細數值及失追限制見 [Windows 驗證紀錄](windows/TEST_RESULTS.md)。髖高用 0.89 m 暫估，不能聲稱公尺尺度準確。
 
+預覽器另提供拒絕原因、被阻擋的 landmark 名稱、有效 transform 影格比例、完成校正與失追次數；`--summary-only` 可只看狀態與累計值。下一次真手機測試可據此量化失追來源。這些新診斷已通過合成資料與 UDP 測試，尚未用真手機重新收集統計。
+
 `pose_receiver.py` 目前只在 `--osc` 下送六個 Avatar 參數，預設不送 OSC。離線 tracker 校正尚未接入它，也沒有 tracker 模式的失追／超時策略。不得把現有 receiver 當作手機 FBT。
 
 ## 接下來的階段

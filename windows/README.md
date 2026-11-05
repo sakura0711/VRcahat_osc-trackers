@@ -109,3 +109,14 @@ python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189
 ~~~
 
 啟動後才在手機 App 輸入相同的 PC IP 與 UDP 埠、按「開始傳送」，確認 ACK；站立約 3 秒後依序抬左腳、放下、抬右腳、放下、蹲下、轉身。`PREVIEW_TRACKERS` 應顯示對應腳高度上升、蹲下時髖降低、轉身時 yaw 改變。`PREVIEW_WAIT` 表示校正或追蹤暫停；`PREVIEW_LOST` 表示須重新站姿校正。若始終無法校正，可再以另一個 `--forward-sign` 做獨立的離線診斷，並記下哪個方向符合真人動作。此預覽不能證明 VRChat IK、FBT 或遠端同步。
+
+`PREVIEW_WAIT` 也會顯示 `reason` 與 `blocked_landmarks`。例如 `image_confidence`／`world_confidence` 會列出低信心的腳踝或腳尖；`calibration_forward` 表示腳尖前向不符合設定；`calibration_turn_or_lean`、`calibration_height_changed` 或 `calibration_feet_not_level` 表示站姿校正條件未通過。每幀只回報首先未通過的檢查，不能把它當成所有問題的完整清單。
+
+每 5 秒的 `PREVIEW_QUALITY` 和正常結束時的 `PREVIEW_FINAL` 會累計：
+
+- `accepted_frames`／`transform_frames`／`transform_frame_pct`：分母為 receiver 接受的所有封包，包含校正期間與無人體封包。比例依影格計算，不代表有效追蹤的時間比例；沒有封包的空白期間不會增加分母。
+- `sessions`／`calibrations`／`tracking_losses`：工作階段、完成校正次數，以及已校正狀態因超時失去的次數。開始新工作階段會重校正，另計於 sessions，不當成追蹤超時。
+- `rejection_frames`：各個首先未通過的檢查所占影格數；校正中但條件正常的影格不算拒絕。
+- `blocked_landmark_frames`：各個點被列為阻擋原因的影格數，同一幀可包含多個點，不能把各點相加當成拒絕幀總數。
+
+若只要觀察狀態事件與統計，在上述指令加 `--summary-only`，不會印出逐幀位置。統計仍逐幀計算，不受終端機顯示頻率影響。這些數字只說明資料通過目前檢查的程度，不能證明位置、腳部旋轉或 HMD 對齊準確。
