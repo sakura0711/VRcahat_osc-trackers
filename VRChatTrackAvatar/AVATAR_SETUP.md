@@ -1,6 +1,6 @@
 # 官方 Robot Avatar 本機測試
 
-目前 `Assets/VRChatTrackRobot.unity` 是從 VRChat SDK 3.10.6 的官方 Robot PC 範例另存的測試場景，六個參數及 Animator 資產位於 `Assets/VRChatTrackMVP`。Unity 2022.3.22f1 的自動骨骼測試及 SDK 本機 Build & Test 已通過；VRChat 已回傳六個 OSC 參數，使用者也確認手臂、彎膝與 WASD 共存正常。手機到遊戲的完整流程仍待實測。詳見 [測試紀錄](TEST_RESULTS.md)。
+目前 `Assets/VRChatTrackRobot.unity` 是從 VRChat SDK 3.10.6 的官方 Robot PC 範例另存的測試場景，六個參數及 Animator 資產位於 `Assets/VRChatTrackMVP`。先前的 Unity 骨骼測試及 SDK 本機 Build & Test 曾通過；VRChat 也曾回傳六個 OSC 參數，使用者確認手臂、彎膝與 WASD 共存。**目前重新執行 Unity smoke test 受 License Client IPC timeout 阻擋，未列為本次通過。** 手機到遊戲的六參數完整流程仍待實測。詳見 [測試紀錄](TEST_RESULTS.md)。
 
 測試 Avatar 僅使用本機 Build & Test，不上傳或發布。此模式的 Avatar 僅對本機玩家可見，不能據此判斷遠端同步。
 
@@ -31,7 +31,7 @@
   -logFile 'E:\10_DevCode\VRchat-track\VRChatTrackAvatar\Logs\robot-mvp-smoke.log'
 ~~~
 
-檢查 log 包含 `VRCHAT_TRACK_SMOKE_TEST: PASS`。此測試重載場景，檢查參數、Animator 混合與骨骼角度、Root 不移動，以及以簡化 Unity PlayableGraph 驗證膝蓋狀態和底層動畫釋放；它不模擬 VRChat 的 IK、實際 Playable Layers、OSC 或鍵盤移動。
+只有 log 實際包含 `VRCHAT_TRACK_SMOKE_TEST: PASS` 才算當次通過；目前 License Client IPC timeout 尚未排除。此測試重載場景，檢查參數、Animator 混合與骨骼角度、Root 不移動，以及以簡化 Unity PlayableGraph 驗證膝蓋狀態和底層動畫釋放；它不模擬 VRChat 的 IK、實際 Playable Layers、OSC 或鍵盤移動。
 
 登入 VRChat SDK 後，也可在沒有其他 Unity Editor 開啟此專案時，以 CLI 執行本機測試建置：
 

@@ -179,7 +179,7 @@ GPU 渲染時間約按縮放倍數平方成長（4K ≈ 1080p 的四倍）。同
 4. **同時按住 `Z` + `X`**（左右扳機）鎖定校正。
 5. 需要時用滑鼠在裝置方框調整髖 / 雙腳位置，讓校正球貼合 Avatar 身體比例。
 
-> 已證實：2026-11-05 使用者完成 AnyaDance tracker 的 FBT 校正，拖動髖／腳方框後，本機 Avatar 下半身跟著動。目前已暫停註冊這三個 SteamVR tracker，以便隔離驗證 OSC；OSC 驅動本機動作與遠端同步仍待驗證。Phase 0 通過標準見 [VIRTUAL_HMD_PHASE0_PLAN.md](VIRTUAL_HMD_PHASE0_PLAN.md)。
+> 已證實：AnyaDance 自帶 tracker 曾在本機完成 FBT 動作；其後停用這三個 SteamVR tracker，本專案合成 OSC tracker 另行完成本機與遠端盲測。兩條追蹤來源不得混為一談。詳見 [Phase 0 證據](VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ---
 

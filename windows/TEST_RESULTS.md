@@ -1,10 +1,10 @@
 # Windows 接收端驗證紀錄
 
-日期：2026-11-04
+最後更新：2026-11-05
 
 ## 自動測試
 
-`python -B -m unittest discover -v`：20 項通過。包含封包格式與順序、六參數的正方向及獨立作用、同一隻手抬起兼彎肘、校正與低信心回退、舊校正樣本過期及封包中斷後重算校正時間、OSC 格式、本機 UDP／OSC，以及 Windows 收到超大 UDP 資料報或已關閉端點的 ACK 重設後繼續接收。另以本機 UDP 測試追蹤逾時回待機、同一工作階段恢復、新工作階段重新校正；手機日誌彙整則以合成紀錄檢查加權頻率與無效資料處理。
+`python -B -m unittest discover -v`：2026-11-05 最新 **26 項通過**。包含接收與 ACK、六參數校正與逾時、OSC 編碼、手動 tracker 探針，以及 `TrackerOutput` 的 ID 3／4 對調、UDP 封包與無效批次不送出。這些是本機自動測試；VRChat 的 OSC FBT 遠端盲測另見 [Phase 0 證據](../VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ## 10 分鐘合成 loopback
 

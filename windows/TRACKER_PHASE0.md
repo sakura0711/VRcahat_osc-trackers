@@ -1,56 +1,37 @@
-# Phase 0 — OSC Tracker 可行性實測
+# Phase 0：合成 OSC Tracker 驗收
 
-此測試不需要手機，也不修改 Avatar 或 VRChat client。它只驗證固定合成 tracker 能否被目前環境接收、校正、驅動 IK 並讓遠端玩家看到；**2026-11-05 虛擬 HMD 的 VR 模式 Phase 0 已通過，純 Desktop 未通過**。
+**結果（2026-11-05）：虛擬 HMD 的 VR 模式已通過。** AnyaDance 自帶 SteamVR trackers 停用後，本探針的 OSC 髖與雙腳完成 FBT 校正；本機鏡子與不知切換時間／腳別的遠端玩家都看到兩輪右腳抬起、放下。這只驗證合成 tracker，手機姿勢仍待接入。純 Desktop 只看到 OSC Debug 封包，未完成 FBT。
 
-2026-11-04 Desktop 測試：OSC Debug 已顯示 Hip + Feet 封包；Avatar 未動，FBT 校正未完成。2026-11-05 虛擬 HMD 的 VR 模式測試：停用 AnyaDance 自帶 SteamVR tracker 後，本探針的髖＋雙腳 OSC tracker 已在 VRChat 完成校正映射及本機兩輪腳部動作。後續使用者確認未修改的購買 Humanoid Avatar；私人房間的遠端玩家在不知道切換時間與腳別時，正確回報兩輪「右 → 放下」。當次 VRChat 把 tracker 3 校正到右腳，與暫定左右慣例相反；詳見 [虛擬 SteamVR Phase 0 計畫與紀錄](../VIRTUAL_HMD_PHASE0_PLAN.md)。
+詳細的 VRChat 日誌映射與時間見 [Phase 0 證據](../VIRTUAL_HMD_PHASE0_PLAN.md)。**已通過的實機驗收不需例行重做。** 以下指令供迴歸或新環境重現。
 
 ## 準備
 
-- 電腦上的 VRChat、Python 3.12；VR 測試需要可正常使用的 HMD、控制器和 VR runtime。Desktop 測試使用同一台電腦的 Desktop 模式。請在舒適、安全的空間進行，站姿校正時避免撞到周圍物品。
-- 六點 FBT 的六個點是頭、雙手、髖與雙腳；若 HMD 和雙控制器已提供前三點，本探針只需送髖與雙腳三個 OSC tracker。[VRChat OSC Trackers](https://docs.vrchat.com/docs/osc-trackers) 也以只送髖和雙腳作為可行組合。
-- 一位遠端玩家，在同一個私人房間；使用正常、未為本專案修改的 Humanoid Avatar。紀錄 Avatar 名稱／是否為購買 Avatar；不需提供 Unity 原始檔。
-- 在 VRChat 啟用 OSC，確認本機輸入 UDP 埠（預設 9000），並關閉其他 OSC tracker 發送程式及可能競爭的實體 tracker 輸入；記錄實際環境。不要同時執行本專案 receiver 的 OSC 輸出。
-- 在 VRChat 將身高設定為實際身高，保留預設 playspace 或記錄偏移；校正時保持站直、面向前方。先開鏡子並在 Tracking & IK 中尋找 tracker 顯示設定。介面名稱會隨版本變更。
+1. 讓 VRChat 進入有 HMD 與雙控制器的 VR 模式；在 AnyaDance 環境確認 `driver_anyadance.enable_trackers=false`，避免其 SteamVR 髖／腳與 OSC 競爭。
+2. 啟用 VRChat OSC，確認本機輸入埠（預設 UDP 9000）；停止其他 OSC tracker 發送程式。使用未修改的 Humanoid Avatar，設定實際身高，開啟鏡子。
+3. 若做遠端驗收，請另一位玩家進入同一私人房間，先不要告知切換時間或哪隻腳會動。
 
-## 探針
+頭與雙手由虛擬 HMD／控制器提供，探針只需送髖及雙腳三點。[VRChat OSC Trackers](https://docs.vrchat.com/docs/osc-trackers)。
 
-在 PowerShell 執行（身高改為自己的公尺數，若 VRChat OSC 輸入埠不同，加 `--port 埠號`）：
+## 手動探針
 
-```powershell
-cd E:\10_DevCode\VRchat-track\windows
-python -B tracker_probe.py --height 1.70 --calibration-seconds 90 --pose-seconds 15 --cycles 2
-```
+在 `windows` 目錄執行，將身高換成自己的公尺數；若 OSC 輸入埠不同，加 `--port`：
 
-探針以 20 Hz 送到 `127.0.0.1:9000`。先固定站姿 90 秒供找 tracker 與校正；接著兩次循環，每次讓 tracker 3 升高 15 秒、站姿 15 秒。終端機會顯示階段；需要更多校正時間可調整 `--calibration-seconds`（1–600 秒），每次姿勢時間可調整 `--pose-seconds`（1–600 秒）。提前按 Ctrl+C 停止；停止後不再發送，VRChat 可能暫時保留最後一筆 tracker 資料，請觀察並記錄實際行為。
-
-多人盲測若需要等玩家進房、切換 Avatar 或重新校正，可在同一個終端機使用手動模式：
-
-```powershell
+~~~powershell
 python -B tracker_probe.py --height 1.67 --interactive --max-seconds 600
-```
+~~~
 
-手動模式持續送站姿；確認 VRChat 日誌把 `OSCTracker1/3/4` 映射為髖與雙腳後，在終端機輸入 `raise`、`stand` 切換，輸入 `quit` 停止。每個指令按 Enter；上例的 1.67 公尺是本次使用者身高，其他人須改成自己的數值。`--max-seconds` 是自動停止保護，預設 600 秒、可設 1–3600 秒。先讓遠端玩家只回報實際看到的姿勢與順序，不透露切換時間或腳別；切換 Avatar 後須重新核對校正映射。
+探針以 20 Hz 向 `127.0.0.1:9000` 持續送站姿。待 VRChat 顯示三個 OSC tracker 後，使用快速選單的 **Calibrate FBT**；AnyaDance 焦點視窗中同時按 `Z`＋`X` 完成校正。確認當次 `OSCTracker1/3/4` 對應髖及雙腳，再在探針終端機逐行輸入：
 
-合成點預期 ID 1 髖、3 左腳、4 右腳，旋轉均為零；這些 ID 是探針自訂標記，**官方頁面沒有指定 ID 與人體部位的固定對應**。VRChat 實際校正可能把 3、4 的左右腳對調，請以當次映射及觀察為準，終端機因此只標示「tracker 3 升高」。位置為左手系、公尺，使用身高比例估計；沒有傳送 head 對齊資訊。校正可能因座標原點、面向、Avatar 比例或其他追蹤來源而失敗；不可把單次對齊失敗直接當作 VRChat 不支援。若出現 tracker 但位置不符，記錄位置及可用的對齊方式，並先檢查身高與其他追蹤來源。官方的舊版 Auto-center 說明已標註過時，不保證目前介面存在該按鈕。參考 [VRChat OSC Trackers](https://docs.vrchat.com/docs/osc-trackers) 與 [FBT 校正](https://docs.vrchat.com/docs/full-body-tracking)。
+~~~text
+raise
+stand
+raise
+stand
+quit
+~~~
 
-## VR 模式與 Desktop 模式分別執行
+`raise` 只升高 **tracker 3**；VRChat 可能把它校正為左腳或右腳，不能從 ID 推斷腳別。`quit` 或 Ctrl+C 停止發送，`--max-seconds` 也會自動停止。切換 Avatar 後須重新確認校正映射。記下本機鏡子與遠端玩家的原樣回答；UDP 封包送出本身不是 VRChat 接收或遠端同步的證據。
 
-1. 進入私人房間，請遠端玩家就位；開啟本機鏡子，確認 Avatar 與身高。先執行 VR 模式，再以 Desktop 重新啟動 VRChat、重新執行探針。若沒有 VR 環境，明確標記 VR「未測試」，不要將 Desktop 結果代替 VR 結果。
-2. 在站姿階段觀察是否有三個 tracker 模型／球及其位置。若 VR 模式出現 FBT 校正功能，進入校正並依當前 VRChat 指示操作；官方目前的 FBT 說明要求站直面向前，雙控制器同時按互動鍵。記錄 Desktop 是否出現相同功能；若沒有可用校正功能，記錄「無法校正」，不聲稱成功。
-3. 校正完成後，保持 HMD／控制器及身體大致不動。依終端機時間提示讓遠端玩家觀察並**在不知道目前階段時**說出左腳抬起或站姿；記錄每一階段是否正確及本機鏡子觀察。避免只以自身動作或既有動畫判斷。若姿勢沒有變化、左右相反或未配對，記下現象與 tracker 位置。
-4. 用 Ctrl+C 或等待結束，記下停止後行為。若要重測，確認其他來源與 VRChat tracker 狀態，再重新執行並重新校正。UDP 本機送出成功不是 VRChat 收到、校正成功或遠端同步的證據。
+## 驗收紀錄
 
-## 結果紀錄（每次測試複製一份）
-
-- 日期／VRChat 版本：
-- 模式：VR / Desktop；HMD、控制器、VR runtime：
-- Avatar／身高／輸入埠／其他追蹤來源或 playspace 偏移：
-- 指令及實際執行時間：
-- 本機是否看到 3 個 tracker、位置與朝向：
-- 校正入口是否存在、步驟、是否完成：
-- 本機站姿 → 左腳抬起 → 站姿的結果（含左右是否正確）：
-- 遠端玩家盲測逐次回答及實際階段：
-- 停止傳送後的行為／其他問題：
-- 結論：通過 / 失敗 / 未完成；證據與待排除原因：
-
-**Phase 0 通過**須在使用者實際可用的環境，以未修改的 Humanoid Avatar 成功校正，且遠端玩家能辨認探針造成的髖／腿姿勢改變。本機畫面、UDP 發送及自動化測試都不能取代遠端確認。VR 與 Desktop 分開記錄；Desktop 未完成或失敗不代表 VR 結果，反之亦然。未通過前不進入手機 tracker 輸出實作。
+只需記錄日期、VRChat／Avatar、身高、是否停用其他 tracker、校正映射、探針命令與時間、本機鏡子觀察、遠端玩家在盲測中說出的姿勢順序。遇到左右反轉、校正失敗或失追時，記下現象與當時的映射，不把單次失敗推論成 OSC FBT 不支援。

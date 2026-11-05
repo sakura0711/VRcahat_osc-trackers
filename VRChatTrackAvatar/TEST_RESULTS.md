@@ -1,5 +1,7 @@
 # Robot Avatar 測試紀錄
 
+以下是 2026-11-04 六參數本機 Robot 的歷史結果，不是 2026-11-05 原生 OSC Tracker Phase 0。最新 Unity smoke test 受 License Client IPC timeout 阻擋，沒有新的通過結果。原生 OSC Tracker 的遠端盲測見 [虛擬 HMD Phase 0 紀錄](../VIRTUAL_HMD_PHASE0_PLAN.md)。
+
 ## 2026-11-04：Unity Editor 骨骼與 Animator
 
 環境：Unity 2022.3.22f1、VRChat SDK 3.10.6 官方 Robot PC 範例；以 batch mode 重載保存的測試場景，使用實際產生的 Gesture Animator 驅動 Humanoid 骨骼。batch mode 強制測試用 Animator 保持更新，以避免畫面外裁切影響結果。SDK 要求的 Gesture 第一層遮罩加入後，已重跑此測試並通過。
@@ -39,7 +41,7 @@
 
 使用者指出原本零值是 T 字平舉，因此未追蹤時也維持平舉。現將左右抬手的 Avatar 預設及無追蹤待機值改為 -1（手臂放下），其他四個關節的待機值維持 0；手機 T 字校正後的零點與姿勢轉換不變。Unity 的待機骨骼測試量得左右上臂與軀幹夾角各約 3.5°，六關節及走路圖層測試通過；Windows 自動測試 9 項及 OSC 診斷工具 loopback 待機值檢查通過，SDK 本機 Build & Test 重新建置成功。使用者重新套用最新版後，已在 VRChat 確認雙臂自然放下。
 
-## 尚待實測
+## 六參數模式尚待實測
 
 - 手機動作到畫面的完整流程、10 分鐘穩定性、視覺端到端延遲與遠端同步。
 
