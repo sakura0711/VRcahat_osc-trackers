@@ -17,7 +17,7 @@ from collections import Counter
 from typing import Any
 
 from pose_receiver import private_ipv4, serve
-from tracker_pose import LANDMARK_NAMES, TrackerCalibrationConfig, TrackerPoseCalibrator
+from tracker_pose import HeightDiagnostics, LANDMARK_NAMES, TrackerCalibrationConfig, TrackerPoseCalibrator
 from tracker_output import TrackerTransform
 
 
@@ -26,15 +26,35 @@ def display_transform(transform: TrackerTransform) -> dict[str, Any]:
             "yaw_deg": round(transform.rotation[1], 1)}
 
 
+def display_height_diagnostics(value: HeightDiagnostics, now_ns: int) -> dict[str, Any]:
+    rounded = lambda values: [round(item, 6) for item in values]
+    calibration = value.calibration
+    return {
+        "at_ns": now_ns,
+        "scale": round(calibration.scale, 6),
+        "basis": {name: rounded(getattr(calibration, name)) for name in ("right", "up", "forward")},
+        "model_ankle_right_minus_left_m": rounded(value.model_ankle_delta_m),
+        "vertical_components_m": rounded(value.vertical_components_m),
+        "ankle_right_minus_left_y_m": round(sum(value.vertical_components_m), 6),
+        "ankle_relative_y_m": dict(zip(("left", "right"), rounded(value.ankle_relative_y_m))),
+        "sole_relative_y_m": dict(zip(("left_heel", "left_toe", "right_heel", "right_toe"),
+                                      rounded(value.sole_relative_y_m))),
+        "floor_shift_m": round(value.floor_shift_m, 6),
+        "ankle_output_y_m": dict(zip(("left", "right"),
+                                     rounded(y + value.floor_shift_m for y in value.ankle_relative_y_m))),
+    }
+
+
 class TrackerPreview:
     def __init__(self, config: TrackerCalibrationConfig, display_interval_s: float = 0.25,
-                 summary_only: bool = False) -> None:
+                 summary_only: bool = False, height_diagnostics: bool = False) -> None:
         self.controller = TrackerPoseCalibrator(config)
         self.session: str | None = None
         self.display_interval_ns = int(display_interval_s * 1e9)
         self.last_display_ns: int | None = None
         self.last_summary_ns: int | None = None
         self.summary_only = summary_only
+        self.height_diagnostics = height_diagnostics
         self.frames = 0
         self.pose_frames = 0
         self.transform_frames = 0
@@ -103,6 +123,9 @@ class TrackerPreview:
         if transforms:
             self._show("PREVIEW_TRACKERS", {role: display_transform(transform)
                                             for role, transform in transforms.items()})
+            if self.height_diagnostics and self.controller.height_diagnostics is not None:
+                self._show("PREVIEW_HEIGHT_DIAGNOSTICS",
+                           display_height_diagnostics(self.controller.height_diagnostics, now_ns))
         else:
             self._show("PREVIEW_WAIT", {"state": "paused" if ready else "calibrating",
                                         "person_detected": packet["personDetected"],
@@ -135,6 +158,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--duration", type=float, default=60.0, help="maximum preview seconds")
     parser.add_argument("--summary-only", action="store_true",
                         help="show events and quality totals without per-frame coordinates")
+    parser.add_argument("--height-diagnostics", action="store_true",
+                        help="show model ankle separation, calibration axes and floor-shift decomposition; no OSC")
     args = parser.parse_args(argv)
     if not private_ipv4(args.bind) or args.bind == "0.0.0.0":
         parser.error("--bind must be a specific RFC1918 or loopback IPv4 address")
@@ -158,7 +183,8 @@ def main(argv: list[str] | None = None) -> int:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.bind((args.bind, args.port))
             print(f"PREVIEW_LISTENING {args.bind}:{args.port}; no OSC socket is opened.", flush=True)
-            preview = TrackerPreview(config, summary_only=args.summary_only)
+            preview = TrackerPreview(config, summary_only=args.summary_only,
+                                     height_diagnostics=args.height_diagnostics)
             try:
                 serve(sock, args.duration, 30.0, args.allow_sender, observer=preview)
             finally:

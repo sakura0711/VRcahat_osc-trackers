@@ -46,6 +46,60 @@ def calibrate(controller, frame=None, start_ns=0):
 
 
 class TrackerPoseTests(unittest.TestCase):
+    def test_height_decomposition_with_tilt_scale_and_common_floor_offset(self):
+        angle = math.radians(30)
+
+        def camera_frame(lift=0.0, sole_offset=0.0):
+            frame = pose(right_lift=lift)
+            for index, point in enumerate(frame["worldLandmarks"]):
+                x, y, z = (point[axis] for axis in ("x", "y", "z"))
+                if index in (29, 30, 31, 32):
+                    y -= sole_offset
+                point.update(x=x * 0.8 + 1.0,
+                             y=(y * math.cos(angle) - z * math.sin(angle)) * 0.8 - 0.2,
+                             z=(y * math.sin(angle) + z * math.cos(angle)) * 0.8 + 0.5)
+            return frame
+
+        controller = TrackerPoseCalibrator(config())
+        calibrate(controller, camera_frame())
+        self.assertIsNone(controller.height_diagnostics)
+        for moment, offset in ((300_000_000, 0.0), (400_000_000, 0.04)):
+            values = controller.ingest(camera_frame(0.2, offset), moment)
+            diagnostic = controller.height_diagnostics
+            self.assertIsNotNone(diagnostic)
+            self.assertAlmostEqual(diagnostic.calibration.scale, 1.25)
+            for actual, expected in zip(diagnostic.calibration.up, (0, math.cos(angle), math.sin(angle))):
+                self.assertAlmostEqual(actual, expected)
+            for actual, expected in zip(diagnostic.vertical_components_m, (0, 0.15, 0.05)):
+                self.assertAlmostEqual(actual, expected)
+            self.assertAlmostEqual(sum(diagnostic.vertical_components_m), 0.2)
+            self.assertAlmostEqual(diagnostic.floor_shift_m, -min(diagnostic.sole_relative_y_m))
+            self.assertAlmostEqual(values["right_foot"].position[1], 0.28 + offset)
+            self.assertAlmostEqual(values["left_foot"].position[1], 0.08 + offset)
+            for i, role in enumerate(("left_foot", "right_foot")):
+                self.assertAlmostEqual(diagnostic.ankle_relative_y_m[i] + diagnostic.floor_shift_m,
+                                       values[role].position[1])
+            self.assertAlmostEqual(values["right_foot"].position[1] - values["left_foot"].position[1],
+                                   sum(diagnostic.vertical_components_m))
+
+    def test_height_diagnostics_do_not_survive_invalid_frame_or_loss(self):
+        controller = TrackerPoseCalibrator(config())
+        calibrate(controller)
+        controller.ingest(pose(), 300_000_000)
+        self.assertIsNotNone(controller.height_diagnostics)
+        bad = pose()
+        bad["landmarks"][27]["visibility"] = 0.1
+        controller.ingest(bad, 400_000_000)
+        self.assertIsNone(controller.height_diagnostics)
+        controller.ingest(pose(), 500_000_000)
+        self.assertIsNotNone(controller.height_diagnostics)
+        controller.ingest(pose(), 500_000_000)
+        self.assertIsNone(controller.height_diagnostics)
+        controller.ingest(pose(), 600_000_000)
+        self.assertIsNotNone(controller.height_diagnostics)
+        controller.tick(850_000_001)
+        self.assertIsNone(controller.height_diagnostics)
+
     def test_standing_raised_foot_squat_and_turn(self):
         controller = TrackerPoseCalibrator(config())
         calibrate(controller)

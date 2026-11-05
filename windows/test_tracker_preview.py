@@ -13,6 +13,32 @@ from tracker_preview import TrackerPreview, main
 
 
 class TrackerPreviewTests(unittest.TestCase):
+    def test_height_diagnostics_are_opt_in_and_match_the_current_transform(self):
+        for enabled in (False, True):
+            with self.subTest(enabled=enabled):
+                preview = TrackerPreview(config(), display_interval_s=0, height_diagnostics=enabled)
+                frame = pose()
+                frame["session"] = "phone-session"
+                lifted = pose(right_lift=0.2)
+                lifted["session"] = "phone-session"
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    for moment in (0, 100_000_000, 200_000_000):
+                        preview.on_packet(frame, moment)
+                    preview.on_packet(lifted, 300_000_000)
+                    preview.on_packet({"session": "phone-session", "personDetected": False}, 400_000_000)
+                diagnostics = [json.loads(line.removeprefix("PREVIEW_HEIGHT_DIAGNOSTICS "))
+                               for line in output.getvalue().splitlines()
+                               if line.startswith("PREVIEW_HEIGHT_DIAGNOSTICS ")]
+                self.assertEqual(len(diagnostics), int(enabled))
+                if enabled:
+                    value = diagnostics[0]
+                    self.assertEqual(value["at_ns"], 300_000_000)
+                    self.assertEqual(value["model_ankle_right_minus_left_m"], [0.3, 0.2, 0.0])
+                    self.assertEqual(value["vertical_components_m"], [0.0, 0.2, 0.0])
+                    self.assertEqual(value["ankle_right_minus_left_y_m"], 0.2)
+                    self.assertEqual(value["ankle_output_y_m"], {"left": 0.08, "right": 0.28})
+
     def test_calibration_preview_and_loss_without_osc(self):
         preview = TrackerPreview(config(), display_interval_s=0)
         frame = pose()
@@ -45,7 +71,7 @@ class TrackerPreviewTests(unittest.TestCase):
         self.assertEqual(len(preview.controller.samples), 1)
 
     def test_quality_totals_survive_display_throttling_loss_and_new_session(self):
-        preview = TrackerPreview(config(), display_interval_s=100, summary_only=True)
+        preview = TrackerPreview(config(), display_interval_s=100, summary_only=True, height_diagnostics=True)
         frame = pose()
         frame["session"] = "first"
         output = io.StringIO()
@@ -77,6 +103,7 @@ class TrackerPreviewTests(unittest.TestCase):
         self.assertEqual(json.loads(final.removeprefix("PREVIEW_FINAL ")), expected)
         self.assertTrue(any(line.startswith("PREVIEW_QUALITY ") for line in lines))
         self.assertNotIn("position_m", output.getvalue())
+        self.assertNotIn("PREVIEW_HEIGHT_DIAGNOSTICS", output.getvalue())
 
     def test_packet_after_timeout_counts_one_loss(self):
         preview = TrackerPreview(config(), summary_only=True)
@@ -171,7 +198,7 @@ class TrackerPreviewTests(unittest.TestCase):
                 result = main(["--bind", "127.0.0.1", "--port", str(port),
                                "--hip-height", "0.9", "--mirror", "yes",
                                "--forward-sign", "-1", "--swap-left-right",
-                               "--duration", "0.1", "--summary-only"])
+                               "--duration", "0.1", "--summary-only", "--height-diagnostics"])
         self.assertEqual(result, 0)
         osc.assert_not_called()
 

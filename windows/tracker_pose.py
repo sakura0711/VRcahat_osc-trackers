@@ -113,6 +113,23 @@ class Calibration:
 
 
 @dataclass(frozen=True)
+class HeightDiagnostics:
+    """Decomposition of one valid frame, after explicit mirror/side mapping.
+
+    Model coordinates are estimates, not measured room coordinates. Subtracting
+    the two output ankle heights cancels the common floor shift; the result is
+    the sum of vertical_components_m. This does not certify physical accuracy.
+    """
+
+    calibration: Calibration
+    model_ankle_delta_m: Vector3  # right minus left
+    vertical_components_m: Vector3  # delta[i] * up[i] * scale
+    ankle_relative_y_m: tuple[float, float]  # left, right; hip-relative
+    sole_relative_y_m: tuple[float, float, float, float]  # L heel/toe, R heel/toe
+    floor_shift_m: float
+
+
+@dataclass(frozen=True)
 class PoseDiagnostic:
     reason: str
     landmarks: tuple[int, ...] = ()
@@ -132,6 +149,7 @@ class TrackerPoseCalibrator:
 
     def reset(self) -> None:
         self.calibration: Calibration | None = None
+        self.height_diagnostics: HeightDiagnostics | None = None
         self.samples: list[Frame] = []
         self.started_ns: int | None = None
         self.last_valid_ns: int | None = None
@@ -259,6 +277,8 @@ class TrackerPoseCalibrator:
 
     def ingest(self, packet: dict[str, Any], now_ns: int) -> dict[str, TrackerTransform]:
         validate_time(now_ns)
+        # Never expose a previous good frame as the current frame's diagnosis.
+        self.height_diagnostics = None
         if self.last_now_ns is not None and now_ns <= self.last_now_ns:
             self.diagnostic = PoseDiagnostic("non_increasing_time")
             return {}
@@ -344,4 +364,14 @@ class TrackerPoseCalibrator:
                for axis in (transform.position[0], transform.position[2])):
             self.diagnostic = PoseDiagnostic("foot_position_bounds")
             return {}
+        ankle_delta = subtract(frame.points[28], frame.points[27])
+        self.height_diagnostics = HeightDiagnostics(
+            calibration=calibration,
+            model_ankle_delta_m=ankle_delta,
+            vertical_components_m=tuple(ankle_delta[i] * calibration.up[i] * calibration.scale
+                                        for i in range(3)),
+            ankle_relative_y_m=(projected[27][1], projected[28][1]),
+            sole_relative_y_m=tuple(projected[index][1] for index in (29, 31, 30, 32)),
+            floor_shift_m=-ground_y,
+        )
         return transforms

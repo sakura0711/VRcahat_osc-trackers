@@ -125,6 +125,14 @@ python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189
 
 若只要觀察狀態事件與統計，在上述指令加 `--summary-only`，不會印出逐幀位置。統計仍逐幀計算，不受終端機顯示頻率影響。這些數字只說明資料通過目前檢查的程度，不能證明位置、腳部旋轉或 HMD 對齊準確。
 
+2026-11-05 的已知 20 cm 踏面測試未通過高度幅度檢查，數據見 `TEST_RESULTS.md`。需要定位此偏差時，加上 `--height-diagnostics`，會隨有效位置樣本顯示 `PREVIEW_HEIGHT_DIAGNOSTICS`：
+
+- `basis`／`scale` 是站姿校正軸與尺度；`model_ankle_right_minus_left_m` 是處理明確鏡像與左右標籤後，模型的右踝減左踝差向量，並非實測房間座標。
+- `vertical_components_m[i] = model_delta[i] × up[i] × scale`；三分量相加等於 `ankle_right_minus_left_y_m`。它也等於兩個輸出踝點高度之差，可在同一幀消去共用地面位移。
+- `ankle_relative_y_m`／`sole_relative_y_m` 是投影後相對髖的踝點／腳底候選高度；`floor_shift_m = -min(sole_relative_y_m)`；`ankle_output_y_m` 是相對踝高加上該位移。`at_ns` 是此輸入影格在 Windows 接收時的單調時間。
+
+診斷值顯示到小數六位只是減少輸出捨入誤差，**不代表微米精度**。只在當前完整有效影格輸出；無效影格、重新校正或失追不會沿用舊分解值。顯示頻率與位置相同，`--summary-only` 會抑制兩者。工具仍不寫檔、不建立 OSC 輸出；需要保存實測證據時另行明確擷取終端機衍生值。此選項只改 Windows，手機 App 不需更新。
+
 離線校正另外拒絕超出 ±5 m 的 hip-centred world landmark（`coordinate_bounds`），以及髖軸無法決定水平朝向的影格（`hip_direction`）。超時清除校正後仍保留本機時間高水位，倒退時間戳不能加入校正；新手機工作階段的明確 reset 才會清除時間高水位。所有產生的 transform 都會再檢查有限數值。
 
 ### 不需手機的 tracker 情境測試
