@@ -120,3 +120,13 @@ python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189
 - `blocked_landmark_frames`：各個點被列為阻擋原因的影格數，同一幀可包含多個點，不能把各點相加當成拒絕幀總數。
 
 若只要觀察狀態事件與統計，在上述指令加 `--summary-only`，不會印出逐幀位置。統計仍逐幀計算，不受終端機顯示頻率影響。這些數字只說明資料通過目前檢查的程度，不能證明位置、腳部旋轉或 HMD 對齊準確。
+
+離線校正另外拒絕超出 ±5 m 的 hip-centred world landmark（`coordinate_bounds`），以及髖軸無法決定水平朝向的影格（`hip_direction`）。超時清除校正後仍保留本機時間高水位，倒退時間戳不能加入校正；新手機工作階段的明確 reset 才會清除時間高水位。所有產生的 transform 都會再檢查有限數值。
+
+### 不需手機的 tracker 情境測試
+
+~~~powershell
+python -B soak_tracker_loopback.py --cycles 2 --fps 20
+~~~
+
+每輪 30 秒，以合成 UDP 資料重播站姿、左右抬腳、蹲下、正負 yaw、低信心、無人體、斷流和新工作階段；每個產生的 transform 都與已知合成姿勢比較。只使用 `127.0.0.1` 與隨機本機埠，不建立 OSC 輸出。`--cycles` 可設 1–20 輪；此測試不能代表實機姿勢品質或長時間穩定性，結果見 `TEST_RESULTS.md`。

@@ -18,6 +18,7 @@ from pose_control import point_confident
 from tracker_output import TrackerTransform
 
 Vector3 = tuple[float, float, float]
+MAX_WORLD_COORDINATE_M = 5.0
 REQUIRED = (11, 12, 23, 24, 27, 28, 29, 30, 31, 32)
 LANDMARK_NAMES = dict(zip(REQUIRED, (
     "left_shoulder", "right_shoulder", "left_hip", "right_hip", "left_ankle",
@@ -42,8 +43,22 @@ def cross(a: Vector3, b: Vector3) -> Vector3:
 
 
 def unit(value: Vector3) -> Vector3 | None:
-    length = math.sqrt(dot(value, value))
-    return tuple(x / length for x in value) if length > 1e-6 else None  # type: ignore[return-value]
+    length = math.hypot(*value)
+    return tuple(x / length for x in value) if math.isfinite(length) and length > 1e-6 else None  # type: ignore[return-value]
+
+
+def finite_scalar(value: Any) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def validate_time(now_ns: int) -> None:
+    if type(now_ns) is not int or now_ns < 0:
+        raise ValueError("now_ns must be a nonnegative monotonic integer")
 
 
 @dataclass(frozen=True)
@@ -61,8 +76,7 @@ class TrackerCalibrationConfig:
     def __post_init__(self) -> None:
         numbers = (self.standing_hip_height_m, self.neutral_yaw_deg, self.confidence,
                    self.calibration_seconds, self.max_sample_gap_ms, self.loss_timeout_ms)
-        if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
-               for value in numbers):
+        if not all(finite_scalar(value) for value in numbers):
             raise ValueError("calibration settings must be finite numbers")
         if not 0.4 <= self.standing_hip_height_m <= 1.5:
             raise ValueError("standing hip height must be 0.4..1.5 m")
@@ -138,8 +152,7 @@ class TrackerPoseCalibrator:
             return None
         low_world = tuple(index for index in REQUIRED if any(
             confidence is not None and (
-                isinstance(confidence, bool) or not isinstance(confidence, (int, float))
-                or not math.isfinite(confidence) or confidence < self.config.confidence
+                not finite_scalar(confidence) or not self.config.confidence <= confidence <= 1.0
             ) for confidence in (world[index].get("visibility"), world[index].get("presence"))
         ))
         if low_world:
@@ -149,9 +162,13 @@ class TrackerPoseCalibrator:
         for index in REQUIRED:
             world_point = world[index]
             coords = tuple(world_point.get(axis) for axis in ("x", "y", "z"))
-            if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
-                   for value in coords):
+            if not all(finite_scalar(value) for value in coords):
                 self.diagnostic = PoseDiagnostic("invalid_coordinate", (index,))
+                return None
+            # Input is hip-centred metres; reject gross outliers before vector
+            # subtraction or products can overflow or contaminate calibration.
+            if any(abs(value) > MAX_WORLD_COORDINATE_M for value in coords):
+                self.diagnostic = PoseDiagnostic("coordinate_bounds", (index,))
                 return None
             x, y, z = coords
             points[index] = (-x if self.config.mirrored_input else x, y, z)
@@ -217,13 +234,19 @@ class TrackerPoseCalibrator:
         self.diagnostic = PoseDiagnostic("calibrated")
 
     def tick(self, now_ns: int) -> None:
+        validate_time(now_ns)
+        if self.last_now_ns is not None and now_ns < self.last_now_ns:
+            return
+        self.last_now_ns = now_ns
         if self.last_valid_ns is not None and now_ns - self.last_valid_ns > self.config.loss_timeout_ms * 1e6:
             self.reset()
+            # Automatic tracking loss must preserve the monotonic high-water
+            # mark. Only an explicit reset (e.g. a new phone session) clears it.
+            self.last_now_ns = now_ns
             self.diagnostic = PoseDiagnostic("timeout")
 
     def ingest(self, packet: dict[str, Any], now_ns: int) -> dict[str, TrackerTransform]:
-        if type(now_ns) is not int or now_ns < 0:
-            raise ValueError("now_ns must be a nonnegative monotonic integer")
+        validate_time(now_ns)
         if self.last_now_ns is not None and now_ns <= self.last_now_ns:
             self.diagnostic = PoseDiagnostic("non_increasing_time")
             return {}
@@ -286,6 +309,9 @@ class TrackerPoseCalibrator:
             return (math.degrees(math.atan2(x, z)) + self.config.neutral_yaw_deg + 180) % 360 - 180
 
         hip_right = subtract(projected[24], projected[23])
+        if math.hypot(hip_right[0], hip_right[2]) < 0.05:
+            self.diagnostic = PoseDiagnostic("hip_direction", (23, 24))
+            return {}
         hip_yaw = heading((-hip_right[2], 0.0, hip_right[0]))
         transforms = {"hip": TrackerTransform(position((0.0, 0.0, 0.0)), (0.0, hip_yaw, 0.0))}
         for role, ankle, heel, toe in (("left_foot", 27, 29, 31), ("right_foot", 28, 30, 32)):
@@ -294,6 +320,10 @@ class TrackerPoseCalibrator:
                 self.diagnostic = PoseDiagnostic("foot_direction", (heel, toe))
                 return {}
             transforms[role] = TrackerTransform(position(projected[ankle]), (0.0, heading(forward), 0.0))
+        if any(not finite_scalar(value) for transform in transforms.values()
+               for value in (*transform.position, *transform.rotation)):
+            self.diagnostic = PoseDiagnostic("nonfinite_transform")
+            return {}
         if not 0.2 <= transforms["hip"].position[1] <= 1.5:
             self.diagnostic = PoseDiagnostic("hip_position_bounds")
             return {}

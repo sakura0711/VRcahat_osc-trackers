@@ -1,7 +1,8 @@
 import math
+import random
 import unittest
 
-from tracker_pose import TrackerCalibrationConfig, TrackerPoseCalibrator
+from tracker_pose import TrackerCalibrationConfig, TrackerPoseCalibrator, unit
 
 
 def pose(*, mirrored=False, right_lift=0.0, squat=0.0, turn=0.0):
@@ -142,6 +143,81 @@ class TrackerPoseTests(unittest.TestCase):
         self.assertEqual(controller.ingest(bad, 400_000_000), {})
         controller.tick(550_000_001)
         self.assertIsNone(controller.calibration)
+
+    def test_vertical_hip_axis_cannot_supply_heading(self):
+        controller = TrackerPoseCalibrator(config())
+        calibrate(controller)
+        bad = pose()
+        bad["worldLandmarks"][23].update(x=0.0, y=-0.13, z=0.0)
+        bad["worldLandmarks"][24].update(x=0.0, y=0.13, z=0.0)
+        self.assertEqual(controller.ingest(bad, 300_000_000), {})
+        self.assertEqual(controller.diagnostic.reason, "hip_direction")
+
+    def test_timeout_preserves_clock_until_explicit_reset(self):
+        controller = TrackerPoseCalibrator(config())
+        calibrate(controller)
+        controller.tick(600_000_001)
+        self.assertEqual(controller.ingest(pose(), 100_000_000), {})
+        self.assertEqual(controller.samples, [])
+        controller.reset()
+        self.assertEqual(controller.ingest(pose(), 100_000_000), {})
+        self.assertEqual(len(controller.samples), 1)
+
+    def test_extreme_coordinates_and_clock_values_fail_closed(self):
+        for coordinate in (1e308, 10 ** 1000, float("nan"), float("inf")):
+            controller = TrackerPoseCalibrator(config())
+            bad = pose()
+            bad["worldLandmarks"][28]["x"] = coordinate
+            with self.subTest(coordinate=str(coordinate)[:12]):
+                self.assertEqual(controller.ingest(bad, 0), {})
+                self.assertIsNone(controller.calibration)
+        controller = TrackerPoseCalibrator(config())
+        for moment in (-1, True, float("nan")):
+            with self.subTest(moment=moment), self.assertRaises(ValueError):
+                controller.tick(moment)
+
+    def test_large_finite_vector_normalizes_without_overflow(self):
+        direction = unit((1e308, 1e308, 0.0))
+        self.assertIsNotNone(direction)
+        self.assertAlmostEqual(math.hypot(*direction), 1.0)
+        self.assertIsNone(unit((float("inf"), 0.0, 0.0)))
+
+    def test_calibration_cancels_camera_rotation_scale_translation_and_mirror(self):
+        randomizer = random.Random(20261105)
+        for case in range(32):
+            angles = [randomizer.uniform(-math.pi, math.pi) for _ in range(3)]
+            model_scale = randomizer.uniform(0.8, 1.2)
+            offset = [randomizer.uniform(-0.2, 0.2) for _ in range(3)]
+            yaw = randomizer.uniform(-180, 180)
+            mirrored = case % 2 == 0
+
+            def camera_frame(right_lift=0.0):
+                frame = pose(right_lift=right_lift)
+                for point in frame["worldLandmarks"]:
+                    x, y, z = (point[axis] for axis in ("x", "y", "z"))
+                    # Apply an independent camera rotation about X, Y, then Z.
+                    c, s = math.cos(angles[0]), math.sin(angles[0])
+                    y, z = c * y - s * z, s * y + c * z
+                    c, s = math.cos(angles[1]), math.sin(angles[1])
+                    x, z = c * x + s * z, -s * x + c * z
+                    c, s = math.cos(angles[2]), math.sin(angles[2])
+                    x, y = c * x - s * y, s * x + c * y
+                    x, y, z = (value * model_scale + shift for value, shift in zip((x, y, z), offset))
+                    point.update(x=-x if mirrored else x, y=y, z=z)
+                return frame
+
+            with self.subTest(case=case):
+                controller = TrackerPoseCalibrator(config(mirrored_input=mirrored, neutral_yaw_deg=yaw))
+                calibrate(controller, camera_frame())
+                values = controller.ingest(camera_frame(right_lift=0.3), 300_000_000)
+                self.assertEqual(set(values), {"hip", "left_foot", "right_foot"})
+                radians = math.radians(yaw)
+                for role, lateral, height in (("hip", 0.0, 0.9), ("left_foot", -0.15, 0.08),
+                                              ("right_foot", 0.15, 0.38)):
+                    expected = (math.cos(radians) * lateral, height, -math.sin(radians) * lateral)
+                    for actual, wanted in zip(values[role].position, expected):
+                        self.assertAlmostEqual(actual, wanted, places=6)
+                    self.assertAlmostEqual(values[role].rotation[1], yaw, places=6)
 
     def test_invalid_config_rejected(self):
         for changes in ({"standing_hip_height_m": float("nan")},
