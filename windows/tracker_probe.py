@@ -9,20 +9,17 @@ import argparse
 import math
 import queue
 import socket
-import struct
 import sys
 import threading
 import time
 
-from pose_control import osc_string
+from tracker_output import osc_vector
 
 
 def vector_message(slot: int, kind: str, values: tuple[float, float, float]) -> bytes:
     if slot not in (1, 3, 4) or kind not in ("position", "rotation"):
         raise ValueError("unsupported tracker or transform")
-    if len(values) != 3 or not all(math.isfinite(value) for value in values):
-        raise ValueError("expected three finite values")
-    return osc_string(f"/tracking/trackers/{slot}/{kind}") + osc_string(",fff") + struct.pack(">fff", *values)
+    return osc_vector(slot, kind, values)
 
 
 def pose(height: float, raised: bool) -> dict[int, tuple[float, float, float]]:

@@ -1,6 +1,6 @@
 # VRChat 原生 OSC Tracker MVP：參考與實作計畫
 
-**狀態：Phase 0 在虛擬 HMD 的 VR 模式完成本機與私人房間遠端驗收（2026-11-05，Asia/Taipei）；純 Desktop 仍未通過。Phase 1 尚未開始。**
+**狀態：Phase 0 在虛擬 HMD 的 VR 模式完成本機與私人房間遠端驗收（2026-11-05，Asia/Taipei）；純 Desktop 仍未通過。Phase 1 的 OSC 輸出元件已完成，receiver 模式切換尚未實作。**
 
 **本文件目的：** 將產品主線從「特定 Avatar 的 Animator 參數控制」調整為「由手機影像驅動 VRChat 原生 Tracker／全身 IK」，並保留現有參數模式作為可回退的自製 Avatar 進階功能。
 
@@ -110,6 +110,8 @@ VRChat 文件指出：資料有誤差時，少送幾個 tracker 往往會得到�
 
 **通過標準：** tracker OSC 封包可被獨立解析、探針能重現 Phase 0 結果。
 
+2026-11-05 進度：新增 `windows/tracker_output.py`，由呼叫端提供已校正的公尺位置、Euler 旋轉及明確的髖／左右腳 ID 對應；只送到本機 OSC 埠。探針改用相同 Vector3 encoder。本機 loopback 驗證 ID 3/4 對調、六筆 OSC 封包及無效資料不送出，Windows 26 項測試通過。`pose_receiver.py` 仍只有六參數 `--osc` 模式，尚未有手機 landmarks 到 tracker 的座標、朝向與超時策略；因此未加入 `--output trackers`，也未宣稱手機 FBT 已完成。Phase 1 仍待完成 receiver 模式切換與停止／超時行為。
+
 ### Phase 2 — 單手機姿勢到 tracker transforms（1–2 天）
 
 1. 將 MediaPipe world landmarks 轉成以髖為根的公尺制骨架。
@@ -183,7 +185,6 @@ master（現有六參數 MVP 基線）
 
 ## 10. 下一步
 
-1. 決定使用者是否具備可進入 VR 模式的環境（PCVR 或 Quest 等），並執行 Phase 0。
-2. 在 `feat/osc-trackers` 完成探針與實機紀錄；Phase 0 通過後才繼續 tracker 輸出。
-3. 以 [Phase 0 實測步驟](windows/TRACKER_PHASE0.md) 檢查無影像依賴的 tracker probe 與遠端可見性，再接上手機 landmark。
-4. 以 3-tracker（Hip + Feet）達成遠端可見的基本全身姿勢後，才擴充至 5 或 8 tracker。
+1. 將已驗證的三點 OSC 輸出元件接到有站姿／面向校正及失追處理的手機座標求解器；明確要求對應當次 VRChat 校正的左右腳 ID。
+2. 加入安全的 receiver `--output` 模式切換，保留既有六參數輸出與預設不送 OSC 行為。
+3. 先做本機鏡子與遠端玩家的單手機姿勢驗收，再擴充至 5 或 8 tracker。

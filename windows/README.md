@@ -82,6 +82,12 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 ## Phase 0：原生 OSC Tracker 探針
 
-新的主線與驗收條件見 [OSC Tracker MVP 計畫](../OSC_TRACKER_MVP_PLAN.md)。`tracker_probe.py` 不依賴手機，對本機送出合成髖＋雙腳 tracker，供 VRChat 校正與遠端觀察；完整的操作和紀錄表見 [Phase 0 實測](TRACKER_PHASE0.md)。2026-11-05 已在隔離 AnyaDance 自帶 SteamVR tracker 的 VR 模式完成 OSC 接收、髖／雙腳校正、本機動作與私人房間遠端盲測；使用者確認目標為未修改的購買 Humanoid Avatar，遠端玩家正確回報兩輪腳部抬起／放下。**VR 模式 Phase 0 已通過**；左右腳校正映射曾對調，手機姿勢輸出及純 Desktop FBT 仍待驗證。現有六參數輸出保留，TrackerOutput 尚未開始。
+新的主線與驗收條件見 [OSC Tracker MVP 計畫](../OSC_TRACKER_MVP_PLAN.md)。`tracker_probe.py` 不依賴手機，對本機送出合成髖＋雙腳 tracker，供 VRChat 校正與遠端觀察；完整的操作和紀錄表見 [Phase 0 實測](TRACKER_PHASE0.md)。2026-11-05 已在隔離 AnyaDance 自帶 SteamVR tracker 的 VR 模式完成 OSC 接收、髖／雙腳校正、本機動作與私人房間遠端盲測；使用者確認目標為未修改的購買 Humanoid Avatar，遠端玩家正確回報兩輪腳部抬起／放下。**VR 模式 Phase 0 已通過**；左右腳校正映射曾對調，手機姿勢輸出及純 Desktop FBT 仍待驗證。現有六參數輸出保留。
 
 私人房間測試可用 `tracker_probe.py --interactive` 持續送站姿，等校正與遠端玩家就位後手動輸入 `raise`、`stand`、`quit`。它仍只送合成 OSC tracker，不讀取手機姿勢；詳見上述 Phase 0 步驟。
+
+## Phase 1：TrackerOutput 元件
+
+`tracker_output.py` 提供 OSC Vector3 編碼與只送到本機的 `TrackerOutput`。呼叫端必須提供已校正的公尺位置、Euler 旋轉，以及 `hip`、`left_foot`、`right_foot` 對應的相異 tracker ID（1–8）；當次 VRChat 校正可能把 3／4 對調。元件只送出有提供的角色，傳入無效資料時整批不送。`tracker_probe.py` 已共用此編碼器；loopback 測試覆蓋對調映射及資料格式。
+
+目前 `pose_receiver.py` **未使用** `TrackerOutput`，仍只在 `--osc` 下輸出六個 Avatar 參數。手機姿勢尚未轉成 VRChat 所需的公尺座標與朝向，也沒有 tracker 失追／超時策略；請勿把這個元件當作手機 FBT 完成。
