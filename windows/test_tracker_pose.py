@@ -1,8 +1,9 @@
 import math
 import random
+import copy
 import unittest
 
-from tracker_pose import TrackerCalibrationConfig, TrackerPoseCalibrator, unit
+from tracker_pose import SWAPPED_LANDMARKS, TrackerCalibrationConfig, TrackerPoseCalibrator, unit
 
 
 def pose(*, mirrored=False, right_lift=0.0, squat=0.0, turn=0.0):
@@ -70,6 +71,37 @@ class TrackerPoseTests(unittest.TestCase):
         self.assertAlmostEqual(transforms["hip"].rotation[1], 30)
         self.assertAlmostEqual(transforms["left_foot"].rotation[1], 30)
         self.assertAlmostEqual(transforms["left_foot"].position[0], -0.15 * math.cos(math.radians(30)))
+
+    def test_explicit_side_swap_restores_physical_feet_and_yaw(self):
+        def front_camera_frame(right_lift=0, turn=0):
+            frame = pose(right_lift=right_lift, turn=turn)
+            # Synthetic mirrored model labels and a declared camera depth axis.
+            # Neither convention is inferred solely from the camera being front-facing.
+            for point in frame["worldLandmarks"]:
+                point["x"] *= -1
+                point["z"] *= -1
+            for field in ("landmarks", "worldLandmarks"):
+                values = frame[field]
+                frame[field] = [values[SWAPPED_LANDMARKS.get(i, i)] for i in range(33)]
+            return frame
+
+        old = TrackerPoseCalibrator(config(mirrored_input=True, forward_sign=1))
+        calibrate(old, front_camera_frame())
+        reversed_values = old.ingest(front_camera_frame(right_lift=0.3), 300_000_000)
+        self.assertAlmostEqual(reversed_values["left_foot"].position[1], 0.38)
+
+        fixed = TrackerPoseCalibrator(config(mirrored_input=True, forward_sign=-1, swap_left_right=True))
+        calibrate(fixed, front_camera_frame())
+        frame = front_camera_frame(right_lift=0.3)
+        before = copy.deepcopy(frame)
+        values = fixed.ingest(frame, 300_000_000)
+        self.assertEqual(frame, before)
+        self.assertAlmostEqual(values["right_foot"].position[1], 0.38)
+        self.assertAlmostEqual(values["left_foot"].position[1], 0.08)
+        self.assertLess(values["left_foot"].position[0], 0)
+        self.assertGreater(values["right_foot"].position[0], 0)
+        turned = fixed.ingest(front_camera_frame(turn=45), 400_000_000)
+        self.assertAlmostEqual(turned["hip"].rotation[1], 45)
 
     def test_no_transform_before_calibration_or_with_missing_points(self):
         controller = TrackerPoseCalibrator(config())
@@ -222,6 +254,7 @@ class TrackerPoseTests(unittest.TestCase):
     def test_invalid_config_rejected(self):
         for changes in ({"standing_hip_height_m": float("nan")},
                         {"mirrored_input": None}, {"forward_sign": 0},
+                        {"swap_left_right": "yes"},
                         {"minimum_samples": 1}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 config(**changes)

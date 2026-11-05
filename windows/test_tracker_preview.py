@@ -170,7 +170,8 @@ class TrackerPreviewTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):
                 result = main(["--bind", "127.0.0.1", "--port", str(port),
                                "--hip-height", "0.9", "--mirror", "yes",
-                               "--forward-sign", "1", "--duration", "0.1", "--summary-only"])
+                               "--forward-sign", "-1", "--swap-left-right",
+                               "--duration", "0.1", "--summary-only"])
         self.assertEqual(result, 0)
         osc.assert_not_called()
 

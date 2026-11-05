@@ -129,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="whether the image sent to MediaPipe was mirrored")
     parser.add_argument("--forward-sign", type=int, choices=(-1, 1), required=True,
                         help="choose the depth sign that makes standing toes point forward")
+    parser.add_argument("--swap-left-right", action="store_true",
+                        help="swap model body-side labels after checking physical left/right motion")
     parser.add_argument("--yaw", type=float, default=0.0, help="neutral yaw degrees; use zero for initial direction checks")
     parser.add_argument("--duration", type=float, default=60.0, help="maximum preview seconds")
     parser.add_argument("--summary-only", action="store_true",
@@ -148,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
             neutral_yaw_deg=args.yaw,
             mirrored_input=args.mirror == "yes",
             forward_sign=args.forward_sign,
+            swap_left_right=args.swap_left_right,
         )
     except ValueError as error:
         parser.error(str(error))

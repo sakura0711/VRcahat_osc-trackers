@@ -105,10 +105,14 @@ python -B soak_loopback.py --duration 600 --fps 15
 在 `windows` 目錄執行，將範例 PC／手機 IP 與髖高換成當前實際值，並讓兩者位於可互通的私人網路：
 
 ~~~powershell
-python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189 --port 8765 --hip-height 0.90 --mirror yes --forward-sign 1 --duration 60
+python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189 --port 8765 --hip-height 0.90 --mirror yes --swap-left-right --forward-sign -1 --duration 60
 ~~~
 
+上例的鏡像、左右標籤與前向組合來自本次 `SM_A5360` 前鏡頭實測。`--mirror` 只處理 X 座標反射；`--swap-left-right` 另外對調本模組使用的肩、髖、腳踝、腳跟與腳尖標籤。兩者互相獨立，預設不對調標籤。對調後身體右軸也會改變，須重新確認 `--forward-sign`。不同手機或後鏡頭不能直接沿用此組合；以真人自己的左右腳做動作確認，不能依自拍畫面左右判斷。這與 VRChat tracker ID 3／4 的映射是兩個不同層次。
+
 啟動後才在手機 App 輸入相同的 PC IP 與 UDP 埠、按「開始傳送」，確認 ACK；站立約 3 秒後依序抬左腳、放下、抬右腳、放下、蹲下、轉身。`PREVIEW_TRACKERS` 應顯示對應腳高度上升、蹲下時髖降低、轉身時 yaw 改變。`PREVIEW_WAIT` 表示校正或追蹤暫停；`PREVIEW_LOST` 表示須重新站姿校正。若始終無法校正，可再以另一個 `--forward-sign` 做獨立的離線診斷，並記下哪個方向符合真人動作。此預覽不能證明 VRChat IK、FBT 或遠端同步。
+
+實機驗收應先排好完整動作順序，以語音／倒數和時間標記分段，做完才回覆；不要要求使用者一邊抬腳或轉身一邊打字。2026-11-05 的語音複驗因此發現早期手動觀察未可靠對齊真人動作時間，撤回其左右映射結論；新版結果見 `TEST_RESULTS.md`。
 
 `PREVIEW_WAIT` 也會顯示 `reason` 與 `blocked_landmarks`。例如 `image_confidence`／`world_confidence` 會列出低信心的腳踝或腳尖；`calibration_forward` 表示腳尖前向不符合設定；`calibration_turn_or_lean`、`calibration_height_changed` 或 `calibration_feet_not_level` 表示站姿校正條件未通過。每幀只回報首先未通過的檢查，不能把它當成所有問題的完整清單。
 

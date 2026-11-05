@@ -24,6 +24,9 @@ LANDMARK_NAMES = dict(zip(REQUIRED, (
     "left_shoulder", "right_shoulder", "left_hip", "right_hip", "left_ankle",
     "right_ankle", "left_heel", "right_heel", "left_toe", "right_toe",
 )))
+SWAPPED_LANDMARKS = {index: partner for left, right in
+                     ((11, 12), (23, 24), (27, 28), (29, 30), (31, 32))
+                     for index, partner in ((left, right), (right, left))}
 
 
 def subtract(a: Vector3, b: Vector3) -> Vector3:
@@ -72,6 +75,7 @@ class TrackerCalibrationConfig:
     minimum_samples: int = 5
     max_sample_gap_ms: float = 500.0
     loss_timeout_ms: float = 250.0
+    swap_left_right: bool = False
 
     def __post_init__(self) -> None:
         numbers = (self.standing_hip_height_m, self.neutral_yaw_deg, self.confidence,
@@ -84,6 +88,8 @@ class TrackerCalibrationConfig:
             raise ValueError("neutral yaw must be -180..180 degrees")
         if type(self.mirrored_input) is not bool or type(self.forward_sign) is not int or self.forward_sign not in (-1, 1):
             raise ValueError("mirror and forward sign must be explicit")
+        if type(self.swap_left_right) is not bool:
+            raise ValueError("swap_left_right must be a boolean verified against physical motion")
         if not 0 < self.confidence <= 1 or self.calibration_seconds < 0 or self.max_sample_gap_ms <= 0 or self.loss_timeout_ms <= 0:
             raise ValueError("invalid confidence or timing")
         if type(self.minimum_samples) is not int or self.minimum_samples < 2:
@@ -140,6 +146,12 @@ class TrackerPoseCalibrator:
         if not isinstance(normalized, list) or not isinstance(world, list) or len(normalized) != 33 or len(world) != 33:
             self.diagnostic = PoseDiagnostic("invalid_landmarks")
             return None
+        if self.config.swap_left_right:
+            # A mirrored image can make model labels follow the reflected body.
+            # This is an explicitly verified semantic mapping, independent of
+            # undoing image X reflection. Do not mutate the received packet.
+            normalized = [normalized[SWAPPED_LANDMARKS.get(index, index)] for index in range(33)]
+            world = [world[SWAPPED_LANDMARKS.get(index, index)] for index in range(33)]
         invalid = tuple(index for index in REQUIRED
                         if not isinstance(normalized[index], dict) or not isinstance(world[index], dict))
         if invalid:

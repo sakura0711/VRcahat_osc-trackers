@@ -142,7 +142,41 @@ class ProtocolTests(unittest.TestCase):
             finally:
                 worker.join(timeout=3)
                 self.assertFalse(worker.is_alive())
-            self.assertGreaterEqual(results[0].udp_resets, 1)
+            # Windows/firewall policy may suppress the ICMP notification. This
+            # integration check verifies that the next real packet still works;
+            # the exception branch is exercised deterministically below.
+            self.assertEqual(results[0].accepted, 1)
+
+    def test_reported_udp_reset_is_counted_and_next_packet_is_accepted(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server, socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client:
+            server.bind(("127.0.0.1", 0))
+            client.settimeout(2)
+
+            class ResetOnceSocket:
+                reset = False
+
+                def settimeout(self, value):
+                    server.settimeout(value)
+
+                def recvfrom(self, size):
+                    if not self.reset:
+                        self.reset = True
+                        raise ConnectionResetError("controlled UDP reset")
+                    return server.recvfrom(size)
+
+                def sendto(self, data, address):
+                    return server.sendto(data, address)
+
+            results = []
+            worker = threading.Thread(target=lambda: results.append(serve(ResetOnceSocket(), 0.3, 10.0)))
+            worker.start()
+            try:
+                client.sendto(encode(packet(seq=9)), server.getsockname())
+                self.assertEqual(json.loads(client.recvfrom(4096)[0])["seq"], 9)
+            finally:
+                worker.join(timeout=2)
+                self.assertFalse(worker.is_alive())
+            self.assertEqual(results[0].udp_resets, 1)
             self.assertEqual(results[0].accepted, 1)
 
 
