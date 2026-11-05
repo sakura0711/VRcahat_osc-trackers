@@ -120,6 +120,15 @@ class TrackerPoseCalibrator:
                 return None
             if not point_confident(image_point, self.config.confidence):
                 return None
+            for key in ("visibility", "presence"):
+                confidence = world_point.get(key)
+                if confidence is not None and (
+                    isinstance(confidence, bool)
+                    or not isinstance(confidence, (int, float))
+                    or not math.isfinite(confidence)
+                    or confidence < self.config.confidence
+                ):
+                    return None
             coords = tuple(world_point.get(axis) for axis in ("x", "y", "z"))
             if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
                    for value in coords):
@@ -158,7 +167,7 @@ class TrackerPoseCalibrator:
             ground = min(dot(subtract(frame.points[i], frame.hip), up) for i in (29, 30, 31, 32))
             distances.append(-ground)
         distance = statistics.median(distances)
-        if not 0.3 <= distance <= 1.5:
+        if not 0.3 <= distance <= 1.5 or max(distances) - min(distances) > 0.08:
             return
         scale = self.config.standing_hip_height_m / distance
         if not 0.5 <= scale <= 2.0:

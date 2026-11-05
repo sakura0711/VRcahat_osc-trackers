@@ -95,6 +95,22 @@ class TrackerPoseTests(unittest.TestCase):
         self.assertIsNone(controller.calibration)
         self.assertEqual(controller.samples, [])
 
+    def test_crouching_during_neutral_window_cannot_calibrate(self):
+        controller = TrackerPoseCalibrator(config())
+        for moment, squat in ((0, 0.0), (100_000_000, 0.2), (200_000_000, 0.0)):
+            self.assertEqual(controller.ingest(pose(squat=squat), moment), {})
+        self.assertIsNone(controller.calibration)
+        self.assertEqual(controller.samples, [])
+
+    def test_low_world_confidence_suppresses_complete_batch(self):
+        controller = TrackerPoseCalibrator(config())
+        calibrate(controller)
+        bad = pose()
+        bad["worldLandmarks"][31]["visibility"] = 0.1
+        self.assertEqual(controller.ingest(bad, 300_000_000), {})
+        self.assertEqual(set(controller.ingest(pose(), 400_000_000)),
+                         {"hip", "left_foot", "right_foot"})
+
     def test_timeout_requires_new_calibration(self):
         controller = TrackerPoseCalibrator(config())
         calibrate(controller)

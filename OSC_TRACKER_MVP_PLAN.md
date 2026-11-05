@@ -25,7 +25,7 @@
 
 `windows/tracker_output.py` 已提供 Vector3 編碼與只送本機的 `TrackerOutput`：呼叫端明確傳入髖、左腳、右腳的 ID 和已校正 transform；無效批次不送出。`tracker_probe.py` 共用編碼器。Loopback 測試覆蓋左右 ID 對調、OSC 位址／型別與無效資料。
 
-`windows/tracker_pose.py` 是**離線**的手機姿勢轉換基礎。站姿樣本建立身體右、上、前軸，實測站姿髖高決定尺度；每幀以可見腳底估計地面，輸出髖與雙腳的位置及 yaw。校正前、低信心或缺點時不產生 transform；失追超過 250 ms 會清除校正，須重新站姿校正。合成影格測試涵蓋站姿、單腳抬起、蹲下、轉身、鏡像、yaw 與失追。**這些是數學與保護條件測試，不是手機或 VRChat 實測。**
+`windows/tracker_pose.py` 是**離線**的手機姿勢轉換基礎。站姿樣本建立身體右、上、前軸，實測站姿髖高決定尺度；每幀以可見腳底估計地面，輸出髖與雙腳的位置及 yaw。校正前、低信心或缺點時不產生 transform；world landmark 低信心與校正期間明顯蹲下也會拒絕。失追超過 250 ms 會清除校正，須重新站姿校正。合成影格測試涵蓋站姿、單腳抬起、蹲下、轉身、鏡像、yaw 與失追。**這些是數學與保護條件測試，不是手機或 VRChat 實測。**
 
 `windows/tracker_preview.py` 已提供不送 OSC 的手機 UDP 離線預覽：沿用 receiver 的封包驗證與 ACK，顯示計算出的髖／雙腳公尺位置及 yaw。2026-11-05 使用單手機與電腦熱點，按指示觀察到右腳、左腳、蹲下及向右轉再轉回的相對方向。這是**手機到 Windows 的離線方向初驗**，沒有把手機資料送進 VRChat；詳細數值及失追限制見 [Windows 驗證紀錄](windows/TEST_RESULTS.md)。髖高用 0.89 m 暫估，不能聲稱公尺尺度準確。
 
