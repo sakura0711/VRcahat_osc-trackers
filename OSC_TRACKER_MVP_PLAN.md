@@ -27,9 +27,9 @@
 
 `windows/tracker_pose.py` 是**離線**的手機姿勢轉換基礎。站姿樣本建立身體右、上、前軸，實測站姿髖高決定尺度；每幀以可見腳底估計地面，輸出髖與雙腳的位置及 yaw。校正前、低信心或缺點時不產生 transform；失追超過 250 ms 會清除校正，須重新站姿校正。合成影格測試涵蓋站姿、單腳抬起、蹲下、轉身、鏡像、yaw 與失追。**這些是數學與保護條件測試，不是手機或 VRChat 實測。**
 
-`windows/tracker_preview.py` 已提供不送 OSC 的手機 UDP 離線預覽：沿用 receiver 的封包驗證與 ACK，顯示計算出的髖／雙腳公尺位置及 yaw。仍須用真實手機影格確認方向、地面與尺度，才能考慮接到 VRChat tracker 輸出。
+`windows/tracker_preview.py` 已提供不送 OSC 的手機 UDP 離線預覽：沿用 receiver 的封包驗證與 ACK，顯示計算出的髖／雙腳公尺位置及 yaw。2026-11-05 使用單手機與電腦熱點，按指示觀察到右腳、左腳、蹲下及向右轉再轉回的相對方向。這是**手機到 Windows 的離線方向初驗**，沒有把手機資料送進 VRChat；詳細數值及失追限制見 [Windows 驗證紀錄](windows/TEST_RESULTS.md)。髖高用 0.89 m 暫估，不能聲稱公尺尺度準確。
 
-`pose_receiver.py` 目前只在 `--osc` 下送六個 Avatar 參數，預設不送 OSC。它**沒有**手機 landmarks 的 tracker 座標、朝向、相機鏡像、地面與 yaw 校正，也沒有 tracker 失追／超時策略。不得把現有 receiver 當作手機 FBT。
+`pose_receiver.py` 目前只在 `--osc` 下送六個 Avatar 參數，預設不送 OSC。離線 tracker 校正尚未接入它，也沒有 tracker 模式的失追／超時策略。不得把現有 receiver 當作手機 FBT。
 
 ## 接下來的階段
 
@@ -40,4 +40,4 @@
 | Phase 3：自然度 | 測量腳部抖動與延遲，再選擇濾波及是否增加胸、肘、膝等點。只加入品質足以改善 IK 的 tracker。 |
 | Phase 4：實機驗收 | 以單手機在未修改的購買 Avatar 上完成本機與遠端盲測，並記錄 10 分鐘 FPS、封包、姿勢有效率、漂移及延遲。 |
 
-**下一個實作點：** 以真實手機影格確認鏡像、前向、腳底與 yaw；再設計接收端的安全輸出選擇與失追後 VRChat tracker 的清除／停止行為。未確認前不把手機資料接到 `TrackerOutput`。
+**下一個實作點：** 量得真實站姿髖高，檢查左右腳動作幅度與腳部 yaw 的抖動、失追頻率，再設計接收端安全輸出選擇及 VRChat tracker 的失追／停止行為。HMD 絕對 yaw 對齊也須實測。這些完成前不把手機資料接到 `TrackerOutput`。

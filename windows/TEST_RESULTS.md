@@ -4,7 +4,19 @@
 
 ## 自動測試
 
-`python -B -m unittest discover -v`：2026-11-05 最新 **26 項通過**。包含接收與 ACK、六參數校正與逾時、OSC 編碼、手動 tracker 探針，以及 `TrackerOutput` 的 ID 3／4 對調、UDP 封包與無效批次不送出。這些是本機自動測試；VRChat 的 OSC FBT 遠端盲測另見 [Phase 0 證據](../VIRTUAL_HMD_PHASE0_PLAN.md)。
+`python -B -m unittest discover -v`：2026-11-05 最新 **39 項通過**。包含接收與 ACK、六參數校正與逾時、OSC 編碼、手動 tracker 探針、`TrackerOutput` 的 ID 3／4 對調、手機 tracker 離線座標校正，以及無 OSC 輸出的預覽器。這些是本機自動測試；VRChat 的 OSC FBT 遠端盲測另見 [Phase 0 證據](../VIRTUAL_HMD_PHASE0_PLAN.md)。
+
+## 單手機離線 tracker 預覽（2026-11-05）
+
+手機 `SM_A5360` 的 App `0.1.0` 經電腦私人熱點把 MediaPipe landmarks 送到 `tracker_preview.py`；測試設定為鏡像 `yes`、前向符號 `1`、初始 yaw `0°`。站姿髖高 **0.89 m 為暫估值，未量測**。工具只顯示推算 transform，沒有建立 OSC 輸出，也沒有保存原始影像或 landmarks。測試期間有封包到達且完成站姿校正；在約 300 秒的狀態快照中，已接受 5,210 個封包、schema 錯誤與序號缺口均為 0、`osc_updates=0`。這不是最後全程計數，也不是長時間穩定性驗收。
+
+依照當場的動作指示，終端機觀察到：
+
+1. 右腳抬起時 `right_foot.y` 約 `0.06 → 0.18 m`，左腳約 `0.08 m`；左腳抬起時 `left_foot.y` 約 `0.09 → 0.50 m`，右腳約 `0.10 m`。支持此手機畫面下的左右角色方向；沒有獨立量測實際抬腳高度，不能宣稱動作公尺幅度準確。
+2. 蹲下時髖的推算高度約 `0.95 → 0.30 m`，雙腳仍約 `0.05–0.12 m`；支持地面與髖高度的相對變化。
+3. 向使用者右手方向轉身、再轉回時，髖 yaw 約 `0° → -55° → 0°`。這只驗證相對轉向；與虛擬 HMD 的絕對 yaw 對齊未驗證。
+
+過程中曾有 `PREVIEW_LOST` 並重新校正；腳部 yaw 在蹲下和腳部動作時波動。這些資料**不能**當作穩定 tracker 輸出、VRChat FBT 或遠端同步已通過。下一步需量實際髖高，量化腳部旋轉抖動與失追，再決定輸出及停止策略。
 
 ## 10 分鐘合成 loopback
 

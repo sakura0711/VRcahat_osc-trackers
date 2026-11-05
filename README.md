@@ -8,7 +8,7 @@
 | --- | --- |
 | VR 模式 Phase 0 | **通過**。AnyaDance 的 SteamVR trackers 停用後，合成 OSC 髖與雙腳完成校正；本機及遠端玩家都看到兩輪右腳抬起／放下。遠端玩家不知道切換時間與腳別。 |
 | Phase 1 | OSC Vector3 encoder 與可指定髖／左右腳 ID 的 `TrackerOutput` 已完成本機 UDP 測試。 |
-| 手機到 VRChat Tracker | **尚未接通**。`windows/tracker_pose.py` 已有離線站姿校正與失追時停止產生 transform 的基礎；相機座標方向、地面、旋轉仍待手機實測，receiver 尚無 tracker 模式。 |
+| 手機到 VRChat Tracker | **尚未接通**。單手機離線預覽已觀察到左右腳抬起、蹲下與轉向的相對變化；實測尺度、追蹤穩定性與 HMD yaw 對齊未通過，receiver 尚無 tracker 模式。 |
 | SteamVR `-202` | 仍在。VRChat 的 VR 畫面與選單可用；AnyaDance 的桌面顯示路徑是待驗證的可能原因。Headset Window 保持 **2560×1440**。 |
 | 其他 | 純 Desktop 的原生 FBT 未通過；長時間穩定性與手機姿勢的遠端同步未驗證。Unity smoke test 受 License Client IPC timeout 阻擋。 |
 
