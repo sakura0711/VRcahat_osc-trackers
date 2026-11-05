@@ -23,7 +23,9 @@
 
 一般 tracker 使用 `/tracking/trackers/{1..8}/position` 與 `/tracking/trackers/{1..8}/rotation`，各帶三個 OSC float。位置為 Unity 左手系公尺；旋轉為 Euler 度。VRChat 不保證 ID 3、4 固定對應左／右腳，因此必須以**當次 FBT 校正映射**設定角色到 ID 的關係。[VRChat 官方 OSC Trackers 文件](https://docs.vrchat.com/docs/osc-trackers)。
 
-`windows/tracker_output.py` 已提供 Vector3 編碼與只送本機的 `TrackerOutput`：呼叫端明確傳入髖、左腳、右腳的 ID 和已校正 transform；無效批次不送出。`tracker_probe.py` 共用編碼器。Loopback 測試覆蓋左右 ID 對調、OSC 位址／型別與無效資料；Windows 26 項自動測試通過。
+`windows/tracker_output.py` 已提供 Vector3 編碼與只送本機的 `TrackerOutput`：呼叫端明確傳入髖、左腳、右腳的 ID 和已校正 transform；無效批次不送出。`tracker_probe.py` 共用編碼器。Loopback 測試覆蓋左右 ID 對調、OSC 位址／型別與無效資料。
+
+`windows/tracker_pose.py` 是**離線**的手機姿勢轉換基礎。站姿樣本建立身體右、上、前軸，實測站姿髖高決定尺度；每幀以可見腳底估計地面，輸出髖與雙腳的位置及 yaw。校正前、低信心或缺點時不產生 transform；失追超過 250 ms 會清除校正，須重新站姿校正。合成影格測試涵蓋站姿、單腳抬起、蹲下、轉身、鏡像、yaw 與失追。**這些是數學與保護條件測試，不是手機或 VRChat 實測。**
 
 `pose_receiver.py` 目前只在 `--osc` 下送六個 Avatar 參數，預設不送 OSC。它**沒有**手機 landmarks 的 tracker 座標、朝向、相機鏡像、地面與 yaw 校正，也沒有 tracker 失追／超時策略。不得把現有 receiver 當作手機 FBT。
 
@@ -36,4 +38,4 @@
 | Phase 3：自然度 | 測量腳部抖動與延遲，再選擇濾波及是否增加胸、肘、膝等點。只加入品質足以改善 IK 的 tracker。 |
 | Phase 4：實機驗收 | 以單手機在未修改的購買 Avatar 上完成本機與遠端盲測，並記錄 10 分鐘 FPS、封包、姿勢有效率、漂移及延遲。 |
 
-**下一個實作點：** 先建立可測的手機座標校正與失追規則，再將 `TrackerOutput` 接入 receiver；避免把未校正的 landmarks 直接送到 VRChat。
+**下一個實作點：** 以真實手機影格確認鏡像、前向、腳底與 yaw；再設計接收端的安全輸出選擇與失追後 VRChat tracker 的清除／停止行為。未確認前不把手機資料接到 `TrackerOutput`。

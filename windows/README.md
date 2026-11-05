@@ -88,4 +88,12 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 `tracker_output.py` 提供 OSC Vector3 編碼與只送到本機的 `TrackerOutput`。呼叫端必須提供已校正的公尺位置、Euler 旋轉，以及 `hip`、`left_foot`、`right_foot` 對應的相異 tracker ID（1–8）；當次 VRChat 校正可能把 3／4 對調。元件只送出有提供的角色，傳入無效資料時整批不送。`tracker_probe.py` 已共用此編碼器；loopback 測試覆蓋對調映射及資料格式。
 
-目前 `pose_receiver.py` **未使用** `TrackerOutput`，仍只在 `--osc` 下輸出六個 Avatar 參數。手機姿勢尚未轉成 VRChat 所需的公尺座標與朝向，也沒有 tracker 失追／超時策略；請勿把這個元件當作手機 FBT 完成。
+目前 `pose_receiver.py` **未使用** `TrackerOutput`，仍只在 `--osc` 下輸出六個 Avatar 參數；請勿把這個元件當作手機 FBT 完成。
+
+## 手機 tracker 座標校正基礎（離線）
+
+`tracker_pose.py` 接受已驗證格式的 MediaPipe 封包，但只回傳三個 `TrackerTransform`，**不送 OSC**。建立 `TrackerCalibrationConfig` 時，必須提供實測站姿髖高（地面至左右髖中點，公尺）、初始 yaw、是否鏡像，以及前向符號。Android 目前把前鏡頭影格鏡像後送進 MediaPipe，因此 `mirrored_input=True` 是程式路徑的設定；仍須以真實影格確認左右與前後方向。前向符號若與站姿腳尖方向不符，校正會失敗。
+
+站姿需雙腳著地並保持方向約 3 秒。校正以 MediaPipe hip-centred world landmarks 建立右、上、前軸，按實測髖高定尺度；腳底由 heel／foot index 估計。每幀以較低的腳底點估計地面；腳 tracker 放在 ankle，旋轉只估 yaw，pitch／roll 固定為零。單手機 world landmarks 沒有房間平移，所以髖的水平位置固定為原點；雙腳同時離地無法與蹲下可靠區分。這些限制與地面估計都待真實手機資料驗證。
+
+任一必要點低於信心門檻或無姿勢時，該幀不產生任何 tracker transform；超過 250 ms 沒有完整有效影格，校正作廢。停止產生資料不保證 VRChat 立刻清除最後一幀；接入 receiver 前須另外驗證遊戲的失追行為。測試：在 `windows` 執行 `python -B -m unittest discover -v`。
