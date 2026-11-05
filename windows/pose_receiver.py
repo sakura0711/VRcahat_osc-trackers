@@ -16,7 +16,7 @@ import sys
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 from pose_control import DEFAULT_CONFIDENCE, IDLE_VALUES, JOINTS, OscOutput, PARAMETERS, PoseController, point_confident
 
 VERSION = 1
@@ -268,12 +268,21 @@ class PoseBridge:
         self.output.close()
 
 
+class PacketObserver(Protocol):
+    """Read-only consumer of accepted packets; independent of OSC output."""
+
+    def on_packet(self, packet: dict[str, Any], now_ns: int) -> None: ...
+
+    def tick(self, now_ns: int) -> None: ...
+
+
 def serve(
     sock: socket.socket,
     duration: float | None,
     report_interval: float,
     allowed_sender: str | None = None,
     bridge: PoseBridge | None = None,
+    observer: PacketObserver | None = None,
 ) -> ReceiverStats:
     stats = ReceiverStats()
     started = time.monotonic()
@@ -336,9 +345,13 @@ def serve(
                                 if (packet["personDetected"] and bridge.controller.baseline is not None
                                         and stats.osc_updates > previous_updates):
                                     stats.pose_to_osc_ms.append((time.perf_counter_ns() - arrival_ns) / 1_000_000.0)
+                            if observer is not None:
+                                observer.on_packet(packet, time.perf_counter_ns())
             now = time.monotonic()
             if bridge is not None:
                 bridge.tick(time.perf_counter_ns(), stats)
+            if observer is not None:
+                observer.tick(time.perf_counter_ns())
             if now >= next_report:
                 print("STATUS " + json.dumps(stats.summary(now - started), separators=(",", ":")), flush=True)
                 next_report = now + report_interval

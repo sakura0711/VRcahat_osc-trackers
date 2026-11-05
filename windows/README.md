@@ -97,3 +97,15 @@ python -B soak_loopback.py --duration 600 --fps 15
 站姿需雙腳著地並保持方向約 3 秒。校正以 MediaPipe hip-centred world landmarks 建立右、上、前軸，按實測髖高定尺度；腳底由 heel／foot index 估計。每幀以較低的腳底點估計地面；腳 tracker 放在 ankle，旋轉只估 yaw，pitch／roll 固定為零。單手機 world landmarks 沒有房間平移，所以髖的水平位置固定為原點；雙腳同時離地無法與蹲下可靠區分。這些限制與地面估計都待真實手機資料驗證。
 
 任一必要點低於信心門檻或無姿勢時，該幀不產生任何 tracker transform；超過 250 ms 沒有完整有效影格，校正作廢。停止產生資料不保證 VRChat 立刻清除最後一幀；接入 receiver 前須另外驗證遊戲的失追行為。測試：在 `windows` 執行 `python -B -m unittest discover -v`。
+
+### 真手機離線預覽
+
+`tracker_preview.py` 會沿用 receiver 的封包驗證、來源限制及 ACK，只在終端機顯示校正進度與三個 tracker 的推算公尺位置／yaw，**不建立 OSC 輸出**。它不記錄原始 landmark 或影像。`--hip-height` 是實測站姿髖高，不是總身高；`--forward-sign` 須以實際腳尖方向選擇。先用 `--yaw 0` 檢查相對方向，絕對 HMD 對齊仍待驗證。
+
+在 `windows` 目錄執行，將範例 PC／手機 IP 與髖高換成當前實際值，並讓兩者位於可互通的私人網路：
+
+~~~powershell
+python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189 --port 8765 --hip-height 0.90 --mirror yes --forward-sign 1 --duration 60
+~~~
+
+啟動後才在手機 App 輸入相同的 PC IP 與 UDP 埠、按「開始傳送」，確認 ACK；站立約 3 秒後依序抬左腳、放下、抬右腳、放下、蹲下、轉身。`PREVIEW_TRACKERS` 應顯示對應腳高度上升、蹲下時髖降低、轉身時 yaw 改變。`PREVIEW_WAIT` 表示校正或追蹤暫停；`PREVIEW_LOST` 表示須重新站姿校正。若始終無法校正，可再以另一個 `--forward-sign` 做獨立的離線診斷，並記下哪個方向符合真人動作。此預覽不能證明 VRChat IK、FBT 或遠端同步。

@@ -27,6 +27,8 @@
 
 `windows/tracker_pose.py` 是**離線**的手機姿勢轉換基礎。站姿樣本建立身體右、上、前軸，實測站姿髖高決定尺度；每幀以可見腳底估計地面，輸出髖與雙腳的位置及 yaw。校正前、低信心或缺點時不產生 transform；失追超過 250 ms 會清除校正，須重新站姿校正。合成影格測試涵蓋站姿、單腳抬起、蹲下、轉身、鏡像、yaw 與失追。**這些是數學與保護條件測試，不是手機或 VRChat 實測。**
 
+`windows/tracker_preview.py` 已提供不送 OSC 的手機 UDP 離線預覽：沿用 receiver 的封包驗證與 ACK，顯示計算出的髖／雙腳公尺位置及 yaw。仍須用真實手機影格確認方向、地面與尺度，才能考慮接到 VRChat tracker 輸出。
+
 `pose_receiver.py` 目前只在 `--osc` 下送六個 Avatar 參數，預設不送 OSC。它**沒有**手機 landmarks 的 tracker 座標、朝向、相機鏡像、地面與 yaw 校正，也沒有 tracker 失追／超時策略。不得把現有 receiver 當作手機 FBT。
 
 ## 接下來的階段
