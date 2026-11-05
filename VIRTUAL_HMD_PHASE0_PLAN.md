@@ -1,6 +1,6 @@
 # Phase 0 延伸：Windows 10 無實體頭顯的 VR 模式可行性
 
-**狀態（2026-11-05）：AnyaDance 三個 SteamVR tracker 已完成 VRChat FBT 校正與本機動作；隔離並停用它們後，本專案的髖＋雙腳 OSC 探針也已在 VRChat 完成校正，使用者在本機鏡子確認兩輪左腳抬起並放下。SteamVR -202 仍在；私人房間遠端同步尚未驗收，Phase 0 尚未通過。**
+**狀態（2026-11-05）：隔離並停用 AnyaDance 自帶 SteamVR trackers 後，本專案的髖＋雙腳 OSC 探針已在 VRChat 完成校正、本機腳部動作與私人房間遠端盲測。使用者確認目標為未修改的購買 Humanoid Avatar；遠端玩家在不知道切換時間與腳別時，正確回報兩輪腳部抬起／放下。虛擬 HMD 的 VR 模式 Phase 0 已通過；左右腳映射曾對調，SteamVR -202 仍在，手機姿勢輸出尚未實作。**
 
 ## 已有證據與邊界
 
@@ -15,7 +15,7 @@
 - 2026-11-05 驅動實驗：將 v0.0.6 原始碼複製到 `E:\10_DevTool\AnyaDance-source-v0.0.6`，以 OpenVR SDK 2.2.3 建置獨立 DLL；唯一原始碼變更為 `Prop_DisplayDebugMode_Bool` 改成 `false`，保留桌面顯示與 2560×1440 設定。重新啟動後，compositor 不再記錄「Forcing debug mode」，仍記錄 `Headset display is on desktop`；`vrmonitor.txt` 仍報 `-202` 並轉為 `SteamVRSystemState_NotReady`。因此**單獨關閉 debug 旗標不是修復**，不能據此判定其餘顯示路徑的根因。畫面擷取逾時，未驗證該實驗版的 VRChat 畫面。原 DLL 已還原，SHA-256 為 `5D8DA376EE6B079CC66FB94AA8A67DD2767CA8823B2E5B22F95A7E854CF28AFB`；備份位於 `E:\10_DevTool\AnyaDance-v0.0.6\driver_anyadance.before-debug-experiment.dll`。
 - 真正的虛擬顯示路徑仍待研究：[OpenVR 文件](https://github.com/ValveSoftware/openvr/blob/master/docs/Driver_API_Documentation.md#ivrvirtualdisplay)要求處理 compositor 影像與同步時序；不能只關閉警告或宣稱切換旗標已實作虛擬顯示。
 - 2026-11-05 重開機後，SteamVR 仍回報 `-202`／`SteamVRSystemState_NotReady`；`Headset Window` 以 1920×1080 顯示在 2560×1440 主螢幕中央，`Alt+Enter` 沒有切成全螢幕。儘管如此，VRChat 再次以 OpenVR 載入全部虛擬裝置，並實際顯示於 `Headset Window`。使用者以 AnyaDance 的 `M` 開啟 VRChat 快速選單，亦能用虛擬右控制器操作 SteamVR 暫停面板返回遊戲。這證明 VR 畫面及輸入可用，尚未證明 FBT 已校正。
-- 先前 VRChat 日誌雖出現 `Initialize SixPoint Avatar` 與 `Applying calibration to avatar... type: 8`，當時仍未以腳部動作或遠端觀察確認；後續本機動作已由使用者確認，遠端仍待驗證。
+- 先前 VRChat 日誌雖出現 `Initialize SixPoint Avatar` 與 `Applying calibration to avatar... type: 8`，當時仍未以腳部動作或遠端觀察確認；後續本機與遠端動作已另行驗證，見下列紀錄。
 - 2026-11-05 使用者已在 VRChat 找到 `Calibrate FBT`，完成校正後拖動 AnyaDance 的髖及雙腳，確認本機 Avatar 下半身跟著動。當次 VRChat 日誌明列 `anyadance_hip_001`、`anyadance_left_foot_001`、`anyadance_right_foot_001` 參與校正，並分別映射為 13、11、12。這證實 **AnyaDance SteamVR tracker 的本機 FBT 動作**；當時尚未測本專案 OSC tracker，後續 OSC 隔離測試另列於下。`-202` 在可用的 VR 畫面與 FBT 動作下仍存在，不能把它視為本機 FBT 校正失敗的證據。
 - 2026-11-05 OSC 隔離準備：把原 SteamVR 設定備份到 `E:\10_DevTool\steamvr-before-osc-isolation-20261105.json`（SHA-256 `D0ED14BC030EC4B899F16EED94B74A821E9CA9004C4780BE84C1E9973EE993DE`），只將 `driver_anyadance.enable_trackers` 設為 `false`。重啟後 `vrserver.txt` 顯示 `trackers=disabled`，並逐一記錄跳過三個 AnyaDance tracker；HMD、控制器及 2560×1440 設定保留。新 VRChat 日誌顯示左右控制器，未見 AnyaDance tracker 連線。還原時須先關閉 SteamVR，再從備份恢復設定並重啟。
 - OSC 狀態複核：VRChat 啟動日誌早期印出 `OSC enabled: False`，但同次啟動隨後宣告 OSC UDP 9000 與 OSCQuery 52766；當時 VRChat 行程確實監聽 UDP 9000，使用者登錄設定 `UI.Settings.Osc_h1043380067=1`，OSCQuery `/?HOST_INFO` 回報 `OSC_PORT=9000`，並列出 `/tracking/trackers/1/position`、`rotation` 為 `fff` 寫入路徑。這些服務資訊當時只證明 OSC 已啟用；後續封包接收、校正與本機動作證據見下。從 [VRChat Main Menu 的 Settings > OSC](https://wiki.vrchat.com/wiki/Settings) 可開啟 OSC Debug Panel，不必先打開圓形 Action Menu。
@@ -33,7 +33,11 @@
 2. **虛擬裝置（已完成）：** AnyaDance 驅動已註冊；SteamVR 顯示虛擬 HMD、左右控制器及三個 tracker。原始設定已有備份；頭顯視窗尺寸依使用者要求設為 2560×1440。解除註冊尚未執行，以便繼續 Phase 0。
 3. **VRChat 校正與本機動作（已完成，僅 AnyaDance SteamVR trackers）：** 使用者完成 FBT 校正，拖動髖與雙腳時 Avatar 下半身跟著動；日誌確認三個 tracker 的校正映射。`-202` 尚未解除，但未阻斷這項本機測試。
 4. **本專案 OSC 隔離本機測試（已完成）：** 已停用 AnyaDance 的三個 SteamVR tracker，保留虛擬 HMD／控制器；OSC 接收、三個 OSC tracker 的 FBT 校正映射、兩輪本機左腳抬起與放下皆已確認。全身六點由虛擬 HMD（頭）、兩支虛擬控制器（雙手）及三個 OSC tracker（髖、雙腳）組成，無須送六個額外 OSC tracker。此閘門不代表遠端通過。
-5. **遠端驗收（待使用者通知，預估 15–30 分鐘，需另一位玩家）：** 私人房間用未修改的 Humanoid Avatar，切換靜止／抬腳，讓另一位玩家在不知道目前階段時辨認。記錄本機與遠端觀察、影片及是否有長時間卡住；若要比較 AnyaDance SteamVR tracker，與 OSC tracker 結果分開記錄。使用者表示下一階段再通知；未取得遠端確認時標示「未完成」。
+5. **遠端驗收（已完成，限本次虛擬 HMD VR 模式）：** 使用者確認穿著未修改的購買 Humanoid Avatar；另一位玩家在同一私人房間，不知道切換時間與腳別，正確回報兩輪右腳抬起與放下。本機鏡子亦確認。AnyaDance SteamVR trackers 全程停用，VRChat 日誌顯示目前 Avatar 的三個 OSC tracker 活動與校正映射。這通過 Phase 0 的遠端可見性閘門，並不驗證純 Desktop 或手機姿勢輸出。
+
+2026-11-05 遠端測試進度：使用者與另一位玩家已進同一私人房間，使用者表示目標是未修改的購買 Humanoid Avatar；另一位玩家可見 AnyaDance 的一般移動，這不等於 OSC FBT。第一次隔離探針開始後使用者回報 VRChat 當掉並重啟，探針已停止；該次輸出日誌有 graceful quit 與結束時例外，尚不足以判定原因。第二次固定時間探針期間，使用者操作校正，但 VRChat 日誌沒有 `OSCTracker1/3/4` 映射，本機及遠端均未見腳部變化，不能據此判定遠端 OSC 同步失敗。為等到確定校正才切換姿勢，`tracker_probe.py` 已加入手動模式，並以本機 UDP 測試驗證指令切換。第三次手動探針於 12:03:37 有效校正三個 OSC tracker，但這次 `OSCTracker4` 映射左腳 11、`OSCTracker3` 映射右腳 12，與先前本機測試左右相反；12:05:59 使用者切換 Avatar，活動 tracker 從 3 變 0，新 Avatar 到 12:06:32 才重新校正，探針於 12:06:43 停止。遠端玩家回報「沒看到」，本機當時正在調整 OSC、沒有觀察鏡子；切換 Avatar 後沒有完整姿勢循環，**當次無法判定**。隨後使用者固定目標 Avatar，完成下列完整重測。
+
+2026-11-05 完整遠端盲測：AnyaDance `enable_trackers=false`，HMD／雙控制器與 2560×1440 保留。手動探針以使用者身高 1.67 公尺，對 `127.0.0.1:9000` 以 20 Hz 持續送 Hip＋Feet；VRChat 日誌於 12:12:04 顯示活動 OSC tracker 從 0 變 3，12:12:05 記錄 `OSCTracker1 → 髖 13`、`OSCTracker4 → 左腳 11`、`OSCTracker3 → 右腳 12`。當前 Avatar 在兩輪切換期間未變更；探針依序於 12:12:40 升高 tracker 3、12:13:12 回站姿、12:13:54 再升高 tracker 3、12:14:28 回站姿，結束後活動 tracker 於 12:15:04 降為 0。遠端玩家事先不知道時間與腳別，原樣回報「右 → 放下 → 右 → 放下」；使用者在本機鏡子也確認兩輪。遠端另提到手從 T 字變為自然垂下，僅列為附帶觀察，不歸因於 OSC 腳部訊號。使用者確認 Avatar 為未修改的購買 Humanoid；日誌中目標 Avatar 名稱為 `チセ -chise-`。**此結果證實本機及遠端能看到 OSC tracker 驅動的腳部變化，Phase 0 的 VR 模式閘門通過。** ID 3/4 左右映射與探針暫定慣例相反，需於下一階段處理；純 Desktop 與手機姿勢端到端仍未通過。
 
 AnyaDance v0.0.6 原始碼中的 `driver_anyadance.enable_trackers` 控制是否註冊三個虛擬 tracker；目前已設為 `false` 且重啟日誌確認跳過。執行 OSC 探針時不得重新開啟此設定。恢復 AnyaDance 原本的本機 FBT 時，先關閉 VRChat／SteamVR，還原上述設定備份，再依正常流程啟動並重新校正。
 

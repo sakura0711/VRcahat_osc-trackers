@@ -2,6 +2,7 @@ import socket
 import struct
 import subprocess
 import sys
+import time
 import unittest
 
 from tracker_probe import pose, send_pose, vector_message
@@ -49,6 +50,44 @@ class TrackerProbeTests(unittest.TestCase):
         for arguments in (("--height", "nan"), ("--pose-seconds", "inf"), ("--port", "0"), ("--cycles", "0")):
             result = subprocess.run([sys.executable, "-B", "tracker_probe.py", *arguments], capture_output=True, text=True)
             self.assertNotEqual(result.returncode, 0)
+
+    def test_interactive_pose_changes_over_udp(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver:
+            receiver.bind(("127.0.0.1", 0))
+            receiver.settimeout(2)
+            process = subprocess.Popen(
+                [sys.executable, "-B", "tracker_probe.py", "--interactive", "--height", "1.7",
+                 "--port", str(receiver.getsockname()[1]), "--max-seconds", "10"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            try:
+                self.assertAlmostEqual(self._left_foot_height(receiver, lambda y: y < 0.1), 0.068, places=3)
+                self.assertIsNotNone(process.stdin)
+                process.stdin.write("raise\n")
+                process.stdin.flush()
+                self.assertAlmostEqual(self._left_foot_height(receiver, lambda y: y > 0.3), 0.408, places=3)
+                process.stdin.write("stand\n")
+                process.stdin.flush()
+                self.assertAlmostEqual(self._left_foot_height(receiver, lambda y: y < 0.1), 0.068, places=3)
+                process.stdin.write("quit\n")
+                process.stdin.flush()
+                stdout, stderr = process.communicate(timeout=3)
+                self.assertEqual(process.returncode, 0, stderr)
+                self.assertIn("tracker 3 raised", stdout)
+                self.assertIn("Stopped sending", stdout)
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                    process.communicate()
+
+    @staticmethod
+    def _left_foot_height(receiver, predicate):
+        deadline = time.monotonic() + 2
+        while time.monotonic() < deadline:
+            address, values = decode_message(receiver.recvfrom(1024)[0])
+            if address == "/tracking/trackers/3/position" and predicate(values[1]):
+                return values[1]
+        raise AssertionError("left foot pose did not change")
 
 
 if __name__ == "__main__":

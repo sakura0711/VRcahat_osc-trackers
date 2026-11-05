@@ -1,8 +1,8 @@
 # Phase 0 — OSC Tracker 可行性實測
 
-此測試不需要手機，也不修改 Avatar 或 VRChat client。它只驗證固定合成 tracker 能否被目前環境接收、校正、驅動 IK 並讓遠端玩家看到；**Phase 0 尚未通過**。
+此測試不需要手機，也不修改 Avatar 或 VRChat client。它只驗證固定合成 tracker 能否被目前環境接收、校正、驅動 IK 並讓遠端玩家看到；**2026-11-05 虛擬 HMD 的 VR 模式 Phase 0 已通過，純 Desktop 未通過**。
 
-2026-11-04 Desktop 測試：OSC Debug 已顯示 Hip + Feet 封包；Avatar 未動，FBT 校正未完成。2026-11-05 虛擬 HMD 的 VR 模式測試：停用 AnyaDance 自帶 SteamVR tracker 後，本探針的髖＋雙腳 OSC tracker 已在 VRChat 完成校正映射；使用者在本機鏡子確認兩輪左腳抬起並放下。購買 Avatar 類型與遠端玩家觀察尚未紀錄，Phase 0 尚未通過。詳見 [虛擬 SteamVR Phase 0 計畫與紀錄](../VIRTUAL_HMD_PHASE0_PLAN.md)。
+2026-11-04 Desktop 測試：OSC Debug 已顯示 Hip + Feet 封包；Avatar 未動，FBT 校正未完成。2026-11-05 虛擬 HMD 的 VR 模式測試：停用 AnyaDance 自帶 SteamVR tracker 後，本探針的髖＋雙腳 OSC tracker 已在 VRChat 完成校正映射及本機兩輪腳部動作。後續使用者確認未修改的購買 Humanoid Avatar；私人房間的遠端玩家在不知道切換時間與腳別時，正確回報兩輪「右 → 放下」。當次 VRChat 把 tracker 3 校正到右腳，與暫定左右慣例相反；詳見 [虛擬 SteamVR Phase 0 計畫與紀錄](../VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ## 準備
 
@@ -21,9 +21,17 @@ cd E:\10_DevCode\VRchat-track\windows
 python -B tracker_probe.py --height 1.70 --calibration-seconds 90 --pose-seconds 15 --cycles 2
 ```
 
-探針以 20 Hz 送到 `127.0.0.1:9000`。先固定站姿 90 秒供找 tracker 與校正；接著兩次循環，每次抬左腳 15 秒、站姿 15 秒。終端機會顯示階段；需要更多校正時間可調整 `--calibration-seconds`（1–600 秒），每次姿勢時間可調整 `--pose-seconds`（1–600 秒）。提前按 Ctrl+C 停止；停止後不再發送，VRChat 可能暫時保留最後一筆 tracker 資料，請觀察並記錄實際行為。
+探針以 20 Hz 送到 `127.0.0.1:9000`。先固定站姿 90 秒供找 tracker 與校正；接著兩次循環，每次讓 tracker 3 升高 15 秒、站姿 15 秒。終端機會顯示階段；需要更多校正時間可調整 `--calibration-seconds`（1–600 秒），每次姿勢時間可調整 `--pose-seconds`（1–600 秒）。提前按 Ctrl+C 停止；停止後不再發送，VRChat 可能暫時保留最後一筆 tracker 資料，請觀察並記錄實際行為。
 
-合成點使用 ID 1 髖、3 左腳、4 右腳，旋轉均為零；這些 ID 是探針自訂標記，**官方頁面沒有指定 ID 與人體部位的固定對應**。位置為左手系、公尺，使用身高比例估計；沒有傳送 head 對齊資訊。校正可能因座標原點、面向、Avatar 比例或其他追蹤來源而失敗；不可把單次對齊失敗直接當作 VRChat 不支援。若出現 tracker 但位置不符，記錄位置及可用的對齊方式，並先檢查身高與其他追蹤來源。官方的舊版 Auto-center 說明已標註過時，不保證目前介面存在該按鈕。參考 [VRChat OSC Trackers](https://docs.vrchat.com/docs/osc-trackers) 與 [FBT 校正](https://docs.vrchat.com/docs/full-body-tracking)。
+多人盲測若需要等玩家進房、切換 Avatar 或重新校正，可在同一個終端機使用手動模式：
+
+```powershell
+python -B tracker_probe.py --height 1.67 --interactive --max-seconds 600
+```
+
+手動模式持續送站姿；確認 VRChat 日誌把 `OSCTracker1/3/4` 映射為髖與雙腳後，在終端機輸入 `raise`、`stand` 切換，輸入 `quit` 停止。每個指令按 Enter；上例的 1.67 公尺是本次使用者身高，其他人須改成自己的數值。`--max-seconds` 是自動停止保護，預設 600 秒、可設 1–3600 秒。先讓遠端玩家只回報實際看到的姿勢與順序，不透露切換時間或腳別；切換 Avatar 後須重新核對校正映射。
+
+合成點預期 ID 1 髖、3 左腳、4 右腳，旋轉均為零；這些 ID 是探針自訂標記，**官方頁面沒有指定 ID 與人體部位的固定對應**。VRChat 實際校正可能把 3、4 的左右腳對調，請以當次映射及觀察為準，終端機因此只標示「tracker 3 升高」。位置為左手系、公尺，使用身高比例估計；沒有傳送 head 對齊資訊。校正可能因座標原點、面向、Avatar 比例或其他追蹤來源而失敗；不可把單次對齊失敗直接當作 VRChat 不支援。若出現 tracker 但位置不符，記錄位置及可用的對齊方式，並先檢查身高與其他追蹤來源。官方的舊版 Auto-center 說明已標註過時，不保證目前介面存在該按鈕。參考 [VRChat OSC Trackers](https://docs.vrchat.com/docs/osc-trackers) 與 [FBT 校正](https://docs.vrchat.com/docs/full-body-tracking)。
 
 ## VR 模式與 Desktop 模式分別執行
 

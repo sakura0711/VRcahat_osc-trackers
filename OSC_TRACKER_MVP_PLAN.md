@@ -1,6 +1,6 @@
 # VRChat 原生 OSC Tracker MVP：參考與實作計畫
 
-**狀態：Phase 0 本機 OSC Tracker 驗證完成；私人房間遠端驗收待使用者通知（2026-11-05，Asia/Taipei）。Phase 1 尚未開始。**
+**狀態：Phase 0 在虛擬 HMD 的 VR 模式完成本機與私人房間遠端驗收（2026-11-05，Asia/Taipei）；純 Desktop 仍未通過。Phase 1 尚未開始。**
 
 **本文件目的：** 將產品主線從「特定 Avatar 的 Animator 參數控制」調整為「由手機影像驅動 VRChat 原生 Tracker／全身 IK」，並保留現有參數模式作為可回退的自製 Avatar 進階功能。
 
@@ -97,11 +97,13 @@ VRChat 文件指出：資料有誤差時，少送幾個 tracker 往往會得到�
 
 2026-11-04 實測已確認 Desktop 的 OSC Debug 收到探針封包，但 Avatar 未動且未完成 FBT 校正。無實體頭顯的 [虛擬 SteamVR Phase 0 計畫](VIRTUAL_HMD_PHASE0_PLAN.md) 是後續獨立驗證路線；虛擬驅動的 FBT 成功不能自動算作 OSC Tracker 路線通過。
 
-2026-11-05 VR 模式進展：AnyaDance 只提供虛擬 HMD 與雙控制器，三個 AnyaDance SteamVR tracker 已停用；本專案 `tracker_probe.py` 以 OSC 送出髖與雙腳。VRChat OSC Debug 顯示探針封包，日誌把 `OSCTracker1/3/4` 校正為髖 13、左腳 11、右腳 12；使用者在本機鏡子確認兩輪左腳抬起並放下。這證實合成 OSC tracker 的**本機接收、校正與 IK 動作**，不代表手機姿勢已接入，也不代表購買 Avatar 的遠端同步已通過。Avatar 類型與私人房間遠端觀察尚未紀錄；Phase 0 通過標準仍未達成。詳見 [實測紀錄](VIRTUAL_HMD_PHASE0_PLAN.md)。
+2026-11-05 本機階段紀錄：AnyaDance 只提供虛擬 HMD 與雙控制器，三個 AnyaDance SteamVR tracker 已停用；本專案 `tracker_probe.py` 以 OSC 送出髖與雙腳。VRChat OSC Debug 顯示探針封包，日誌把 `OSCTracker1/3/4` 校正為髖 13、左腳 11、右腳 12；使用者在本機鏡子確認兩輪左腳抬起並放下。當時只證實合成 OSC tracker 的**本機接收、校正與 IK 動作**；遠端驗收於同日後續完成，手機姿勢仍未接入。詳見 [實測紀錄](VIRTUAL_HMD_PHASE0_PLAN.md)。
+
+2026-11-05 遠端驗收：使用者確認目標為未修改的購買 Humanoid Avatar；AnyaDance 自帶 SteamVR tracker 維持停用。在同一私人房間，手動探針於目前 Avatar 上維持三個活動 OSC tracker，`OSCTracker1` 映射髖、`OSCTracker4` 映射左腳、`OSCTracker3` 映射右腳。遠端玩家事先不知道切換時間與腳別，原樣回報「右 → 放下 → 右 → 放下」；本機鏡子也確認兩輪抬起與放下。這符合本計畫 **VR 模式 Phase 0** 的遠端可見性閘門。左右腳 ID 與本專案暫定慣例相反，Phase 1 必須明確處理校正後映射或座標朝向；手機影像到 OSC tracker 的流程、純 Desktop FBT、長時間穩定性及 SteamVR `-202` 修復均未由本次證實。詳見 [時間與日誌紀錄](VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 ### Phase 1 — Tracker 輸出基礎（0.5–1 天）
 
-1. 建立 `TrackerOutput` 與 OSC Vector3 encoder，固定使用 VRChat 定義的 tracker slot。
+1. 建立 `TrackerOutput` 與 OSC Vector3 encoder，使用本專案可設定的 tracker ID；不可假設 VRChat 把 ID 3/4 固定映射為左／右腳，須處理校正後左右對調及座標朝向。
 2. 新增 `--output parameters|trackers` 命令列選項；預設仍為安全、不送 OSC 的模式。
 3. 為 OSC 位址、型別、slot mapping、停止送出與超時行為加入單元測試及 loopback 測試。
 4. 保持現有 parameters 測試全數通過。
