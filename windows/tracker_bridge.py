@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import math
-import sys
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from console_status import StatusConsole
 from tracker_output import ROLES, TrackerOutput, TrackerTransform
-from tracker_pose import TrackerCalibrationConfig, TrackerPoseCalibrator
+from tracker_pose import LANDMARK_NAMES, TrackerCalibrationConfig, TrackerPoseCalibrator
 
 
 @dataclass(frozen=True)
@@ -39,13 +39,17 @@ class TrackerBridge:
     """Emit complete fresh batches; never turn invalid frames into new poses."""
 
     def __init__(self, config: TrackerBridgeConfig, port: int = 9000,
-                 output: TrackerOutput | None = None) -> None:
+                 output: TrackerOutput | None = None,
+                 console: StatusConsole | None = None) -> None:
         self.config = config
         self.controller = TrackerPoseCalibrator(config.calibration)
         self.output = output if output is not None else TrackerOutput(config.slots, port)
+        self.console = console if console is not None else StatusConsole()
         self.session: str | None = None
         self.last_batch: dict[str, TrackerTransform] | None = None
         self.last_valid_ns: int | None = None
+        self.last_progress_ns: int | None = None
+        self.last_progress_started_ns: int | None = None
         self.state = "calibrating"
         self.closed = False
 
@@ -55,14 +59,62 @@ class TrackerBridge:
 
     def _state(self, state: str, reason: str) -> None:
         if state != self.state:
+            previous = self.state
             self.state = state
-            print(f"TRACKER_STATE {state} reason={reason}", flush=True)
+            if state == "lost" and reason not in ("stopped", "new_session"):
+                self.console.emit("lost", f"Tracker lost ({reason}); OSC stopped. Recalibration required.")
+            elif state == "calibrating" and previous == "lost":
+                self.console.emit("loading", "Tracker calibration restarted. Stand with both feet down and full body visible.")
+            elif state == "tracking" and previous in ("calibrating", "lost"):
+                self.console.emit("ready", "Tracker calibrated; sending OSC. Confirm reception in VRChat.")
+
+    def status_line(self, now_ns: int) -> tuple[str, str]:
+        """Human status; timing is a lower bound, never a promise of calibration."""
+        controller = self.controller
+        diagnostic = controller.diagnostic
+        reason = diagnostic.reason
+        landmarks = ",".join(LANDMARK_NAMES.get(index, str(index)) for index in diagnostic.landmarks[:4])
+        detail = f"{reason} ({landmarks})" if landmarks else reason
+        if self.closed:
+            return "error", "Tracker output closed; no further OSC updates."
+        if self.state == "tracking":
+            return "ready", "Tracker active; OSC sends on valid new frames."
+        if self.state == "paused":
+            remaining = 0.0 if controller.last_valid_ns is None else max(
+                0.0, (self.config.calibration.loss_timeout_ms * 1e6 - (now_ns - controller.last_valid_ns)) / 1e9
+            )
+            return "wait", f"OSC paused ({detail}); valid frames must resume within {remaining:.1f}s or recalibration starts."
+        if self.state == "lost":
+            return "lost", "Tracker lost; OSC stopped. A continuous valid standing pose is required."
+        if controller.started_ns is not None and reason == "calibrating":
+            remaining = max(0.0, controller.config.calibration_seconds - (now_ns - controller.started_ns) / 1e9)
+            missing = max(0, controller.config.minimum_samples - len(controller.samples))
+            return "loading", (
+                f"Standing calibration: {len(controller.samples)} valid frames; "
+                f"earliest {remaining:.1f}s to time gate, {missing} more frames needed; OSC blocked."
+            )
+        return "check", (
+            f"Standing calibration blocked ({detail}); need at least "
+            f"{controller.config.calibration_seconds:g}s and {controller.config.minimum_samples} valid frames; OSC blocked."
+        )
 
     def _clear(self, reason: str) -> None:
         self.controller.reset()
         self.last_batch = None
         self.last_valid_ns = None
+        self.last_progress_ns = None
+        self.last_progress_started_ns = None
         self._state("lost", reason)
+
+    def _calibration_progress(self, now_ns: int) -> None:
+        started_ns = self.controller.started_ns
+        if (self.controller.diagnostic.reason == "calibrating" and started_ns is not None and
+                (self.last_progress_started_ns != started_ns or self.last_progress_ns is None or
+                 now_ns - self.last_progress_ns >= 1_000_000_000)):
+            label, message = self.status_line(now_ns)
+            self.console.emit(label, message)
+            self.last_progress_ns = now_ns
+            self.last_progress_started_ns = started_ns
 
     def _send(self, transforms: Mapping[str, TrackerTransform], stats: Any) -> None:
         if self.closed:
@@ -71,7 +123,7 @@ class TrackerBridge:
             stats.osc_updates += self.output.send(transforms)
         except (OSError, ValueError) as error:
             stats.osc_errors += 1
-            print(f"TRACKER_OUTPUT_ERROR {error}", file=sys.stderr, flush=True)
+            self.console.emit("error", f"Tracker OSC send failed: {error}", error=True)
             self._clear("output_error")
             self.output.close()
             self.closed = True
@@ -105,6 +157,7 @@ class TrackerBridge:
         if not transforms:
             if self.controller.calibration is None:
                 self._state("calibrating", self.controller.diagnostic.reason)
+                self._calibration_progress(now_ns)
             else:
                 self._state("paused", self.controller.diagnostic.reason)
             return

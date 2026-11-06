@@ -13,6 +13,7 @@ from test_pose_receiver import packet
 from test_tracker_pose import config, pose
 from tracker_bridge import TrackerBridge, TrackerBridgeConfig
 from tracker_output import TrackerTransform
+from console_status import StatusConsole
 
 
 SLOTS = {"hip": 1, "left_foot": 3, "right_foot": 4}
@@ -59,6 +60,49 @@ def ready_bridge(*, loss_ms=250, hold_ms=0, slots=SLOTS):
 
 
 class TrackerBridgeTests(unittest.TestCase):
+    def test_calibration_status_gives_lower_bound_and_blocking_landmarks(self):
+        bridge = TrackerBridge(TrackerBridgeConfig(config(calibration_seconds=3), SLOTS),
+                               output=FakeOutput(), console=StatusConsole("never"))
+        stats = ReceiverStats()
+        with contextlib.redirect_stdout(io.StringIO()):
+            for moment in (0, 100_000_000, 200_000_000):
+                bridge.on_packet(frame(), moment, stats)
+        label, message = bridge.status_line(200_000_000)
+        self.assertEqual(label, "loading")
+        self.assertIn("earliest 2.8s", message)
+        self.assertIn("OSC blocked", message)
+        low = frame()
+        low["landmarks"][28]["visibility"] = 0.1
+        bridge.on_packet(low, 250_000_000, stats)
+        label, message = bridge.status_line(250_000_000)
+        self.assertEqual(label, "check")
+        self.assertIn("right_ankle", message)
+        self.assertNotIn("earliest", message)
+        self.assertEqual(stats.osc_updates, 0)
+
+    def test_calibration_progress_is_throttled_to_one_line_per_second(self):
+        bridge = TrackerBridge(TrackerBridgeConfig(config(calibration_seconds=3), SLOTS),
+                               output=FakeOutput(), console=StatusConsole("never"))
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            for moment in (0, 200_000_000, 400_000_000, 600_000_000, 800_000_000,
+                           1_000_000_000, 1_200_000_000):
+                bridge.on_packet(frame(), moment, ReceiverStats())
+        progress = [line for line in output.getvalue().splitlines() if "earliest" in line]
+        self.assertEqual(len(progress), 2)
+        self.assertIn("earliest 3.0s", progress[0])
+        self.assertIn("earliest 2.0s", progress[1])
+
+    def test_short_pause_resume_does_not_spam_transition_lines(self):
+        bridge, _, stats = ready_bridge(loss_ms=1000)
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            for moment in (450_000_000, 600_000_000, 750_000_000):
+                bridge.tick(moment, stats)
+                bridge.on_packet(frame(), moment + 1, stats)
+        self.assertEqual(captured.getvalue(), "")
+        self.assertEqual(bridge.status_line(750_000_001)[0], "ready")
+
     def test_receiver_loopback_sends_only_fresh_calibrated_batch(self):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as receiver, \
              socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sender, \

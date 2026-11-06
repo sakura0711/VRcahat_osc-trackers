@@ -12,11 +12,11 @@ import ipaddress
 import json
 import math
 import socket
-import sys
 import time
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Protocol
+from console_status import StatusConsole
 from pose_control import DEFAULT_CONFIDENCE, IDLE_VALUES, JOINTS, OscOutput, PARAMETERS, PoseController, point_confident
 from tracker_bridge import TrackerBridge, TrackerBridgeConfig
 from tracker_pose import TrackerCalibrationConfig
@@ -229,9 +229,11 @@ class ReceiverStats:
 
 
 class PoseBridge:
-    def __init__(self, port: int, calibration_seconds: float, smoothing_ms: float, hold_ms: float):
+    def __init__(self, port: int, calibration_seconds: float, smoothing_ms: float, hold_ms: float,
+                 console: StatusConsole | None = None):
         self.controller = PoseController(calibration_seconds=calibration_seconds, smoothing_ms=smoothing_ms, hold_ms=hold_ms)
         self.output = OscOutput(port)
+        self.console = console if console is not None else StatusConsole()
         self.session: str | None = None
         self.last_progress_ns = 0
 
@@ -247,7 +249,21 @@ class PoseBridge:
             stats.osc_updates += len(values)
         except OSError as error:
             stats.osc_errors += 1
-            print(f"OSC error: {error}", file=sys.stderr, flush=True)
+            self.console.emit("error", f"Six-parameter OSC send failed: {error}", error=True)
+
+    def status_line(self, now_ns: int) -> tuple[str, str]:
+        if self.output_ready:
+            return "ready", "Six parameters calibrated; OSC sends on valid frames."
+        counts = {name: len(self.controller.calibration[name]) for name in PARAMETERS}
+        missing = max(0, self.controller.minimum_calibration_samples - min(counts.values()))
+        if self.controller.started_ns is None:
+            return "check", (f"Six parameters await a full-body neutral T-pose; need at least "
+                             f"{self.controller.calibration_seconds:g}s and "
+                             f"{self.controller.minimum_calibration_samples} frames per joint; pose OSC blocked.")
+        remaining = max(0.0, self.controller.calibration_seconds -
+                        (now_ns - self.controller.started_ns) / 1e9)
+        return "loading", (f"Six-parameter calibration: earliest {remaining:.1f}s to time gate, "
+                           f"at least {missing} more frames per joint; pose OSC blocked.")
 
     def on_packet(self, packet: dict[str, Any], now_ns: int, stats: ReceiverStats) -> None:
         if packet["session"] != self.session:
@@ -255,14 +271,15 @@ class PoseBridge:
             self.session = packet["session"]
             self.controller.reset()
             self.last_progress_ns = 0
-            print("CALIBRATION: hold a neutral T-pose until all six joints are ready.", flush=True)
+            self.console.emit("loading", (f"Six-parameter calibration started. Hold a full-body neutral T-pose; "
+                                          f"earliest {self.controller.calibration_seconds:g}s to time gate."))
         was_calibrated = self.controller.baseline is not None
         values = self.controller.ingest(packet, now_ns)
         if not was_calibrated and self.controller.baseline is not None:
-            print("CALIBRATION: complete; sending six avatar parameters to local VRChat.", flush=True)
+            self.console.emit("ready", "Six parameters calibrated; sending local OSC. Confirm reception in VRChat.")
         elif self.controller.baseline is None and now_ns - self.last_progress_ns >= 2_000_000_000:
             counts = {name: len(self.controller.calibration[name]) for name in PARAMETERS}
-            print("CALIBRATION samples=" + json.dumps(counts, separators=(",", ":")), flush=True)
+            self.console.emit("loading", "Six-parameter samples=" + json.dumps(counts, separators=(",", ":")))
             self.last_progress_ns = now_ns
         self.send(values, stats)
 
@@ -289,8 +306,10 @@ def serve(
     allowed_sender: str | None = None,
     bridge: PoseBridge | TrackerBridge | None = None,
     observer: PacketObserver | None = None,
+    console: StatusConsole | None = None,
 ) -> ReceiverStats:
     stats = ReceiverStats()
+    console = console if console is not None else StatusConsole()
     started = time.monotonic()
     next_report = started + report_interval
     sock.settimeout(0.05)
@@ -359,6 +378,15 @@ def serve(
             if observer is not None:
                 observer.tick(time.perf_counter_ns())
             if now >= next_report:
+                if bridge is not None:
+                    label, message = bridge.status_line(time.perf_counter_ns())
+                elif stats.accepted:
+                    label, message = "check", "Receiving packets; OSC output disabled."
+                else:
+                    label, message = "check", "Waiting for phone UDP packets; OSC output disabled."
+                console.emit(label, (f"{message} Accepted {stats.accepted}, no pose {stats.no_pose_frames}, "
+                                     f"OSC messages {stats.osc_updates}, rejected senders {stats.unauthorized}; "
+                                     f"next report in ~{report_interval:g}s."))
                 print("STATUS " + json.dumps(stats.summary(now - started), separators=(",", ":")), flush=True)
                 next_report = now + report_interval
     except KeyboardInterrupt:
@@ -367,6 +395,7 @@ def serve(
         if bridge is not None:
             bridge.close(stats)
     print("FINAL " + json.dumps(stats.summary(time.monotonic() - started), separators=(",", ":")), flush=True)
+    console.emit("check", f"Receiver stopped. Accepted {stats.accepted}; OSC messages {stats.osc_updates}.")
     return stats
 
 
@@ -377,6 +406,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--allow-sender", help="optional private IPv4 address of the phone")
     parser.add_argument("--duration", type=float, help="stop after this many seconds")
     parser.add_argument("--report-interval", type=float, default=5.0)
+    parser.add_argument("--color", choices=("auto", "always", "never"), default="auto",
+                        help="human status color; auto only on interactive terminals")
     parser.add_argument("--osc", action="store_true", help="send calibrated parameters to local VRChat")
     parser.add_argument("--output", choices=("none", "parameters", "trackers"),
                         help="explicit output mode; default none; --osc remains parameters")
@@ -445,17 +476,19 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as error:
             parser.error(str(error))
     try:
+        console = StatusConsole(args.color)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.bind((args.bind, args.port))
-            print(f"LISTENING {args.bind}:{args.port} (UDP, private network only)", flush=True)
-            bridge = (PoseBridge(args.osc_port, args.calibration_seconds, args.smoothing_ms, args.hold_ms)
+            console.emit("check", f"Listening on {args.bind}:{args.port} UDP (private network); waiting for phone packets.")
+            bridge = (PoseBridge(args.osc_port, args.calibration_seconds, args.smoothing_ms, args.hold_ms,
+                                 console=console)
                       if mode == "parameters" else
-                      TrackerBridge(tracker_config, args.osc_port) if tracker_config is not None else None)
+                      TrackerBridge(tracker_config, args.osc_port, console=console) if tracker_config is not None else None)
             if bridge is not None:
-                print(f"OSC {mode} enabled: 127.0.0.1:{args.osc_port}; sending does not confirm VRChat reception.", flush=True)
-            serve(sock, args.duration, args.report_interval, args.allow_sender, bridge)
+                console.emit("loading", f"OSC {mode} targets 127.0.0.1:{args.osc_port}; pose output waits for calibration.")
+            serve(sock, args.duration, args.report_interval, args.allow_sender, bridge, None, console)
     except OSError as error:
-        print(f"receiver error: {error}", file=sys.stderr)
+        StatusConsole(args.color).emit("error", f"Receiver error: {error}", error=True)
         return 1
     return 0
 

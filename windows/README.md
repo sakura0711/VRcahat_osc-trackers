@@ -94,7 +94,9 @@ python -B soak_loopback.py --duration 600 --fps 15
 python -B pose_receiver.py --bind 192.168.137.1 --allow-sender 192.168.137.189 --port 8765 --output trackers --tracker-hip-id 1 --tracker-left-foot-id 3 --tracker-right-foot-id 4 --tracker-hip-height 0.90 --tracker-mirror yes --tracker-swap-left-right yes --tracker-forward-sign -1 --tracker-yaw 0
 ~~~
 
-未完成站姿校正前零 tracker 輸出。每幀必要點低信心、無人或資料不完整時不送新姿勢；最後有效 transform 超過 `--tracker-loss-ms`（預設 250 ms，允許 0–5000 ms 的正值）須重校正。`--tracker-hold-ms` 預設 0，不重送舊姿勢；若明確設為正值，最多為 `min(loss, 250 ms)`。突變超過預設 0.5 m 或 90° 會要求重校正；可用 `--tracker-max-jump-m`／`--tracker-max-yaw-jump-deg` 調整，這些初值尚未實機調校。`--hold-ms` 仍只屬六參數模式。狀態會印出校正中、追蹤中、暫停與失追；停止發送不保證 VRChat 立即清除最後姿勢。平滑、速度限制及失追後過渡尚未完成。
+未完成站姿校正前零 tracker 輸出。每幀必要點低信心、無人或資料不完整時不送新姿勢；最後有效 transform 超過 `--tracker-loss-ms`（預設 250 ms，允許 0–5000 ms 的正值）須重校正。`--tracker-hold-ms` 預設 0，不重送舊姿勢；若明確設為正值，最多為 `min(loss, 250 ms)`。突變超過預設 0.5 m 或 90° 會要求重校正；可用 `--tracker-max-jump-m`／`--tracker-max-yaw-jump-deg` 調整，這些初值尚未實機調校。`--hold-ms` 仍只屬六參數模式。停止發送不保證 VRChat 立即清除最後姿勢。平滑、速度限制及失追後過渡尚未完成。
+
+接收器的人類可讀輸出採用簡短英文，避免部分 Windows 主控台顯示中文亂碼。標記為 `[check]`（等待或校正受阻）、`[loading]`（校正中）、`[ready]`（開始或持續送 OSC）、`[wait]`（短暫暫停）、`[lost]`（失追須重校正）、`[error]`（傳送錯誤）。tracker 校正期間最多每秒提示一次；每個報告週期會顯示已收封包、無姿勢封包、OSC 訊息數、拒絕來源數與下一次報告間隔。校正時間只顯示「earliest」剩餘秒數，仍須連續有效影格與足夠樣本。缺少有效影格時沒有可信倒數，會列出阻擋原因與低信心點。`--report-interval 5` 可調整報告頻率。`--color auto` 預設僅在支援 ANSI 的互動終端機顯色；`--color always` 強制顯色，`--color never` 關閉。`STATUS`／`FINAL` JSON 行保持原格式，供既有工具讀取；Android MediaPipe 輸出不受影響。
 
 ### 已存 ZIP 的三姿勢回放
 
