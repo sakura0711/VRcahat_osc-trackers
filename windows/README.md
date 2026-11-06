@@ -92,7 +92,9 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 ### 已存 ZIP 的三姿勢回放
 
-`tracker_replay.py` 可把已校正的原始手機 landmarks 準備成「站姿 → 右腳上箱 → 放回」三個固定姿勢，預設不建立 socket。已有 95 項 Windows 測試與真實 ZIP 的不送 OSC 檢查；尚未驗證本次 VRChat 效果。探索測試須先語音通知、等待使用者就位，再明確啟用 `--osc`、核對 ZIP 雜湊與三個角色 ID；啟用後先維持站姿，收到 `play` 才跑一次有限序列。手機 App 無需更動。完整指令、停止行為與限制見 [回放指南](TRACKER_REPLAY_GUIDE.md)。這不是 live receiver 的 tracker 輸出模式。
+`tracker_replay.py` 可把已校正的原始手機 landmarks 準備成「站姿 → 右腳上箱 → 放回」三個固定姿勢，預設不建立 socket。已有 95 項 Windows 測試與真實 ZIP 的不送 OSC 檢查；後續本機鏡子已確認原始 ZIP 的右腳抬起清楚可見。探索測試須先依當輪偏好通知、等待使用者就位，再明確啟用 `--osc`、核對 ZIP 雜湊與三個角色 ID；啟用後先維持站姿，收到 `play` 才跑一次有限序列。手機 App 無需更動。完整指令、停止行為與限制見 [回放指南](TRACKER_REPLAY_GUIDE.md)。這不是 live receiver 的 tracker 輸出模式。
+
+即時手機 tracker 的低信心、失追、可調整重新校正門檻與平滑方案見 [安全與平滑計畫](LIVE_TRACKER_SAFETY_PLAN.md)；這些新的 receiver 整合功能目前仍是規劃。
 
 ## 手機 tracker 座標校正基礎（離線）
 

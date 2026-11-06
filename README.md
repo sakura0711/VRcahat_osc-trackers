@@ -24,8 +24,11 @@
 2. [虛擬 HMD 與 Phase 0 證據](VIRTUAL_HMD_PHASE0_PLAN.md)：`-202` 診斷、設定備份與遠端盲測紀錄。
 3. [Windows 操作](windows/README.md)／[Phase 0 探針](windows/TRACKER_PHASE0.md)：接收端、測試指令與 OSC 隔離方式。
    [目前 FBT 不動排查](windows/FBT_DIAGNOSTIC_2026-11-06.md)：坐姿錯誤、角色映射、探針逾時與下次最短驗證。
+   [即時 tracker 安全與平滑計畫](windows/LIVE_TRACKER_SAFETY_PLAN.md)：可調整的失追門檻、輸出保護與測試。
 4. [Android 操作](android/README.md)：手機 App 建置與 LAN 傳輸。
 5. [六參數舊路線](PROJECT_PLAN.md)：自製 Avatar 的保留功能；不適用於未修改的購買 Avatar。
+
+需要開始新對話時，可複製 [交接 prompt](NEXT_SESSION_PROMPT.md)。
 
 Windows 自動測試在 `windows` 目錄執行：
 
