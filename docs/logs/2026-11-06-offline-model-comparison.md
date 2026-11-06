@@ -1,12 +1,12 @@
 # 固定影像離線模型比對：右腳高度低估
 
-後續已備妥 [Android 獨立回放 App](../android/REPLAY_GUIDE.md)，在唯讀模擬器以 MediaPipe 1.0.0 CPU IMAGE 重現接近以下結果；手機未更新，VIDEO 稀疏回放校正失敗、不能當有效高度比較。本頁保留較早的桌面實驗，不能將模擬器結果當成三星手機 GPU／LIVE_STREAM 驗收。
+後續已備妥 [Android 獨立回放 App](../../android/REPLAY_GUIDE.md)，在唯讀模擬器以 MediaPipe 1.0.0 CPU IMAGE 重現接近以下結果；手機未更新，VIDEO 稀疏回放校正失敗、不能當有效高度比較。本頁保留較早的桌面實驗，不能將模擬器結果當成三星手機 GPU／LIVE_STREAM 驗收。
 
 **下一步先保留 App 0.2.0 與手機 OSC 關閉。Full 是值得後續驗證的候選，尚不能因這輪桌面結果就更新 App 或宣稱高度問題已修復。** 本輪只使用已保存 PNG，沒有新拍攝、手機操作或真人動作。
 
 ## 已證實：同圖更換模型會明顯改變結果
 
-輸入沿用 [上一輪影像調查](IMAGE_PAIR_REVIEW_2026-11-06.md) 的同一 ZIP，SHA-256 `da27054e6dab99f031cb5cc4f897bde61a180f8f599d1cf6f4978c0795645d2c`。22 張 PNG 原始像素／尺寸保留，不再鏡像、旋轉或外部縮放；RGB 轉換前確認全部為 RGB 或 alpha 全不透明。三個模型各推論 22 張，皆有 20 張通過幾何檢查；同樣的 16 張保持姿勢照片全有效，沒有以不同有效樣本挑選結果。
+輸入沿用 [上一輪影像調查](2026-11-06-image-pair-review.md) 的同一 ZIP，SHA-256 `da27054e6dab99f031cb5cc4f897bde61a180f8f599d1cf6f4978c0795645d2c`。22 張 PNG 原始像素／尺寸保留，不再鏡像、旋轉或外部縮放；RGB 轉換前確認全部為 RGB 或 alpha 全不透明。三個模型各推論 22 張，皆有 20 張通過幾何檢查；同樣的 16 張保持姿勢照片全有效，沒有以不同有效樣本挑選結果。
 
 桌面使用既有 **MediaPipe Python 0.10.21／CPU XNNPACK／獨立 IMAGE**。手機原始資料來自 **Android tasks-vision 1.0.0／LIVE_STREAM**，delegate 未記錄；兩者不是完全相同的執行路徑。官方提供 [Lite／Full／Heavy 模型與輸出定義](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker)，[IMAGE 模式範例](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker?tab=Python) 說明單張推論方式。Full／Heavy 從官方連結下載後固定 SHA-256，沒有上傳照片；Lite 直接使用專案既有 Android asset。
 

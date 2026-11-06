@@ -1,6 +1,6 @@
 # VRChat Track — Android 單手機 MVP
 
-目前已實作手機前鏡頭、MediaPipe Pose Landmarker、關鍵點疊加、CPU／GPU 分段計時與手機到 Windows 的 Wi-Fi UDP 傳輸。Windows 的 `--output trackers` 已把手機姿勢送到 VRChat 原生 OSC Tracker；2026-11-06 本機即時測試中，使用者確認 OSC Debugger 更新且 Avatar 動作。虛擬 HMD 的合成 OSC Tracker Phase 0 另已通過本機及遠端驗收；手機姿勢的遠端、精度與長時間效果仍待驗證，詳見 [主計畫](../OSC_TRACKER_MVP_PLAN.md)。
+目前已實作手機前鏡頭、MediaPipe Pose Landmarker、關鍵點疊加、CPU／GPU 分段計時與手機到 Windows 的 Wi-Fi UDP 傳輸。Windows 的 `--output trackers` 已把手機姿勢送到 VRChat 原生 OSC Tracker；2026-11-06 本機即時測試中，使用者確認 OSC Debugger 更新且 Avatar 動作。虛擬 HMD 的合成 OSC Tracker Phase 0 另已通過本機及遠端驗收；手機姿勢的遠端、精度與長時間效果仍待驗證，詳見 [主計畫](../docs/PLAN.md)。
 
 ## 已固定的基線
 
@@ -68,7 +68,7 @@ Kotlin 檢查涵蓋明確啟用、取樣間隔／上限、單張自有影像、�
 本次新增紀錄的 APK 已通過建置與 lint，但尚未安裝或在實機驗證。回到電腦後連接已授權 USB 偵錯的手機，可用 Android Studio 執行 App，或在專案根目錄執行：
 
 ~~~powershell
-$adb = 'C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe'
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 & $adb devices -l
 & $adb install -r .\android\app\build\outputs\apk\debug\app-debug.apk
 ~~~
@@ -76,9 +76,9 @@ $adb = 'C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe'
 在另一個 PowerShell 視窗開始擷取目前之後的手機日誌，接著進行一次不中斷的實機測試：
 
 ~~~powershell
-cd E:\10_DevCode\VRchat-track\windows
+cd <專案目錄>\windows
 New-Item -ItemType Directory -Force .\captures | Out-Null
-$adb = 'C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe'
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 & $adb logcat -T 1 -v time -s PoseLandmarkerEngine:I LanPoseSender:I '*:S' | Tee-Object -FilePath .\captures\phone-run.log
 ~~~
 
@@ -122,5 +122,5 @@ $src = 'app\src\main\java\com\vrchattrack\singlephone'
 - Android 端正式 tracker 校正與濾波；目前由 Windows 的 tracker 流程處理校正，平滑尚未實作
 - 手機經 Windows receiver 驅動 VRChat Avatar 的遠端與長時間驗證；本機動作已初驗
 
-後續以 [原生 OSC Tracker MVP 計畫](../OSC_TRACKER_MVP_PLAN.md) 與 [即時 tracker 安全計畫](../windows/LIVE_TRACKER_SAFETY_PLAN.md) 為準。
+後續以 [原生 OSC Tracker MVP 計畫](../docs/PLAN.md) 與 [即時 tracker 安全計畫](../windows/LIVE_TRACKER_SAFETY_PLAN.md) 為準。
 

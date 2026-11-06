@@ -23,7 +23,7 @@
 
 VIDEO 完成 API 呼叫，但兩模型的前站姿均為 **0／5 有效，獨立校正失敗**。共用手機校正時，箱面只有 Lite 1／6、Full 3／6 有效；不能把少量剩餘樣本的中位數拿來與 IMAGE 比高度。Windows 對此輸出 `geometry_comparison_complete=false`，保留缺值／失敗，不補零、不沿用舊姿勢。本批約每 3 秒一張，缺少原始連續影格與追蹤歷史；VIDEO 不等於 LIVE_STREAM 重播。預設先使用 **CPU／IMAGE**。
 
-完整階段數據、APK／原始報告雜湊及限制見 [驗證 evidence](../windows/evidence/2026-11-06-android-replay-preparation.json)。原始照片、模型、新推論點、APK 與模擬器原始報告留在忽略目錄。
+完整階段數據、APK／原始報告雜湊及限制見 [驗證 evidence](../docs/logs/evidence/2026-11-06-android-replay-preparation.json)。原始照片、模型、新推論點、APK 與模擬器原始報告留在忽略目錄。
 
 ## 之後才需要的手機操作
 

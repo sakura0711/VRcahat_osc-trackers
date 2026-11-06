@@ -3,19 +3,19 @@
 將下方整段貼到新的 Codex 對話：
 
 ~~~text
-請接手 E:\10_DevCode\VRchat-track，僅使用 feat/osc-trackers。
+請接手 <專案目錄>（VRchat-track），僅使用 feat/osc-trackers。
 
-先檢查 git status、目前 commit 與遠端狀態，保留既有變更。再讀：
-1. README.md
-2. OSC_TRACKER_MVP_PLAN.md
-3. VIRTUAL_HMD_PHASE0_PLAN.md
-4. windows/README.md
-5. windows/TRACKER_PHASE0.md
-6. windows/LIVE_TRACKER_SAFETY_PLAN.md
-7. windows/TEST_RESULTS.md 最上方的最新紀錄
+先檢查 git status、目前 commit 與遠端狀態，保留既有變更。文件架構與規範見 docs/README.md。再讀：
+1. README.md（導覽）
+2. docs/STATUS.md（目前狀態的單一來源）
+3. docs/PLAN.md（主線、OSC 契約與 Phase）
+4. windows/README.md（Windows 操作）
+5. windows/TRACKER_PHASE0.md、windows/LIVE_TRACKER_SAFETY_PLAN.md
+6. docs/logs/windows-tests.md 最上方的最新紀錄
+7. reference/steamvr-202.md（-202 與環境，必要時）
 
 請使用 i-have-adhd 格式：先說下一步；用短句與編號；分清「已證實」與「待驗證」；最後給一個兩分鐘內可做的動作。技能檔：
-C:\Users\user\.codex\plugins\cache\i-have-adhd\i-have-adhd\0.4.1\skills\i-have-adhd\SKILL.md
+%USERPROFILE%\.codex\plugins\cache\i-have-adhd\i-have-adhd\0.4.1\skills\i-have-adhd\SKILL.md
 
 目標：一支 Android 手機的姿勢辨識，經 Windows 與 VRChat 原生 OSC Trackers／FBT，驅動未修改的購買 Humanoid Avatar，並讓私人房間其他玩家看見。
 

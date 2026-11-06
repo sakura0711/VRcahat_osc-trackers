@@ -1,6 +1,6 @@
 # 同一影格影像／landmarks 對照工具
 
-目前狀態：App 0.2.0 與 Windows 檢視工具已完成自動檢查；**Samsung 真手機 PNG 擷取、ZIP 匯出與 Windows 匯入已確認**。22 組新影像完整拍到右腳箱面動作；[離線影像調查](IMAGE_PAIR_REVIEW_2026-11-06.md) 仍重現高度低估。GPU delegate、保存負載與背景停止仍待實測。這是高度低估的診斷工具，不會將手機資料接到 VRChat tracker。
+目前狀態：App 0.2.0 與 Windows 檢視工具已完成自動檢查；**Samsung 真手機 PNG 擷取、ZIP 匯出與 Windows 匯入已確認**。22 組新影像完整拍到右腳箱面動作；[離線影像調查](../docs/logs/2026-11-06-image-pair-review.md) 仍重現高度低估。GPU delegate、保存負載與背景停止仍待實測。這是高度低估的診斷工具，不會將手機資料接到 VRChat tracker。
 
 ## 手機端：預設關閉、明確啟用
 
@@ -47,4 +47,4 @@ App 的本機配對與 UDP 共用 `PoseFrameJson`，維持協定 version 1，新
 - **待驗證：** GPU delegate、保存負載、按鈕停止競態／背景停止與真人點位精度。實際封包沒有 delegate 欄位，不能僅憑模型預設推定 GPU 通過；合成 JVM PNG 與 Node 的 DOM／Canvas 模型不能替代上述實機驗收。每 3 秒的照片也不能驗證即時失追策略。
 - **仍未通過：** 手機動作公尺高度；本工具不改校正／地面／倍率，也不代表 FBT、HMD 對齊、遠端同步或 Unity smoke test 通過。
 
-同一 PNG 可另交由 [離線模型比較工具](OFFLINE_MODEL_COMPARISON_2026-11-06.md) 做桌面 CPU IMAGE 研究。新推論與手機原始結果分開；不得將其回填成原手機紀錄，亦不代表手機更新後已通過。
+同一 PNG 可另交由 [離線模型比較工具](../docs/logs/2026-11-06-offline-model-comparison.md) 做桌面 CPU IMAGE 研究。新推論與手機原始結果分開；不得將其回填成原手機紀錄，亦不代表手機更新後已通過。

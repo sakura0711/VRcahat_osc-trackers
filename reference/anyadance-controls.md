@@ -1,8 +1,8 @@
 # AnyaDance 操作參考（v0.0.6）
 
-本專案在 [Phase 0 虛擬 HMD 驗證](VIRTUAL_HMD_PHASE0_PLAN.md) 使用 AnyaDance 提供虛擬 SteamVR 裝置。本文件整理 AnyaDance v0.0.6 `AnyaDance.exe` 的**所有操作**，資料來源為官方 `README.zh-CN.md` 與 v0.0.6 原始碼（`src/ui/input.cpp`）。
+本專案在 [Phase 0 驗收紀錄](../docs/logs/2026-11-05-phase0.md) 使用 AnyaDance 提供虛擬 SteamVR 裝置。本文件整理 AnyaDance v0.0.6 `AnyaDance.exe` 的**所有操作**，資料來源為官方 `README.zh-CN.md` 與 v0.0.6 原始碼（`src/ui/input.cpp`）。
 
-> AnyaDance 是外部工具，位於 `E:\10_DevTool\AnyaDance-v0.0.6\anyadance`。其自帶的三個 SteamVR tracker 不等於本專案 OSC Tracker 成功；兩者須分開驗證。
+> AnyaDance 是外部工具，位於 `<工具目錄>\AnyaDance-v0.0.6\anyadance`。其自帶的三個 SteamVR tracker 不等於本專案 OSC Tracker 成功；兩者須分開驗證。
 
 ---
 
@@ -29,7 +29,7 @@
 | 左腳 tracker | |
 | 右腳 tracker | |
 
-- `AnyaDance.exe` 一打開就以 **60 Hz** 推送六裝置 T 姿勢；目前 Phase 0 OSC 隔離測試已把 SteamVR 的 `driver_anyadance.enable_trackers` 設為 `false`，因此驅動只註冊 HMD 與左右控制器。原設定已備份，詳見 [虛擬 HMD Phase 0 計畫](VIRTUAL_HMD_PHASE0_PLAN.md)。
+- `AnyaDance.exe` 一打開就以 **60 Hz** 推送六裝置 T 姿勢；目前 Phase 0 OSC 隔離測試已把 SteamVR 的 `driver_anyadance.enable_trackers` 設為 `false`，因此驅動只註冊 HMD 與左右控制器。原設定已備份，詳見 [SteamVR -202 與環境](steamvr-202.md)。
 - 封包停止後，SteamVR 仍看到各裝置停在最後姿勢，保持連線、有效、`TrackingResult_Running_OK`。
 - 正常退出時送出一幀中性輸入。
 
@@ -59,7 +59,7 @@
 
 - AnyaDance v0.0.6 原版驅動（`virtual_device.cpp:940-961`）只建立搖桿 `x`/`y` 軸，**沒有 `thumbstick/click`、`trackpad/click` 元件**，送不出搖桿按壓。
 - `application_menu/click` 元件存在，但 AnyaDance 沒有鍵對應它（`input.cpp` 綁定表只有 WASD/QE/Space/M/V/Z/X）。
-- 2026-11-05 獨立測試版加入 `R → right.system_click → /input/thumbstick/click`。AnyaDance 自帶測試 1/1 通過；使用者截圖顯示多次 `R down/up` 皆為 `Sent`，SteamVR 讀取了 `joystick::click` 綁定，但 VRChat 圓形選單**沒有反應**。因此只證明 UI 送出及綁定存在，不能判定 VRChat 收到或按鍵可用。測試後已還原原版 exe、DLL、控制器 profile，三個檔案皆經雜湊核對；備份位於 `E:\10_DevTool\AnyaDance-before-thumbstick-20261105`。可重建的差異見 [補丁](patches/anyadance-v0.0.6-r-action-menu.patch)；此補丁未完成遊戲內驗收。
+- 2026-11-05 獨立測試版加入 `R → right.system_click → /input/thumbstick/click`。AnyaDance 自帶測試 1/1 通過；使用者截圖顯示多次 `R down/up` 皆為 `Sent`，SteamVR 讀取了 `joystick::click` 綁定，但 VRChat 圓形選單**沒有反應**。因此只證明 UI 送出及綁定存在，不能判定 VRChat 收到或按鍵可用。測試後已還原原版 exe、DLL、控制器 profile，三個檔案皆經雜湊核對；備份位於 `<工具目錄>\AnyaDance-before-thumbstick-20261105`。可重建的差異見 [補丁](patches/anyadance-v0.0.6-r-action-menu.patch)；此補丁未完成遊戲內驗收。
 
 ---
 
@@ -167,7 +167,7 @@ UDP 日誌（永遠英文）每行可：**複製**（原始請求體）、**複�
 ```
 GPU 渲染時間約按縮放倍數平方成長（4K ≈ 1080p 的四倍）。同一小節另有桌面鏡像視窗設定：`headset_window_width`、`headset_window_height`、`headset_window_eye_mode`、`headset_window_preserve_aspect`。
 
-> 本專案目前把 `headset_window_width/height` 設為 **2560×1440**（使用者要求保留），與 `-202` 是否解除無關。詳見 [VIRTUAL_HMD_PHASE0_PLAN.md](VIRTUAL_HMD_PHASE0_PLAN.md)。
+> 本專案目前把 `headset_window_width/height` 設為 **2560×1440**（使用者要求保留），與 `-202` 是否解除無關。詳見 [SteamVR -202 與環境](steamvr-202.md)。
 
 ---
 
@@ -179,7 +179,7 @@ GPU 渲染時間約按縮放倍數平方成長（4K ≈ 1080p 的四倍）。同
 4. **同時按住 `Z` + `X`**（左右扳機）鎖定校正。
 5. 需要時用滑鼠在裝置方框調整髖 / 雙腳位置，讓校正球貼合 Avatar 身體比例。
 
-> 已證實：AnyaDance 自帶 tracker 曾在本機完成 FBT 動作；其後停用這三個 SteamVR tracker，本專案合成 OSC tracker 另行完成本機與遠端盲測。兩條追蹤來源不得混為一談。詳見 [Phase 0 證據](VIRTUAL_HMD_PHASE0_PLAN.md)。
+> 已證實：AnyaDance 自帶 tracker 曾在本機完成 FBT 動作；其後停用這三個 SteamVR tracker，本專案合成 OSC tracker 另行完成本機與遠端盲測。兩條追蹤來源不得混為一談。詳見 [Phase 0 證據](../docs/logs/2026-11-05-phase0.md)。
 
 ---
 
@@ -193,7 +193,7 @@ GPU 渲染時間約按縮放倍數平方成長（4K ≈ 1080p 的四倍）。同
 
 ## 10. 參考
 
-- 官方 README：`E:\10_DevTool\AnyaDance-v0.0.6\anyadance\README.zh-CN.md`
-- 原始碼鍵位邏輯：`E:\10_DevTool\AnyaDance-source-v0.0.6\src\ui\input.cpp`
-- 專案 Phase 0 計畫：[VIRTUAL_HMD_PHASE0_PLAN.md](VIRTUAL_HMD_PHASE0_PLAN.md)
+- 官方 README：`<工具目錄>\AnyaDance-v0.0.6\anyadance\README.zh-CN.md`
+- 原始碼鍵位邏輯：`<工具目錄>\AnyaDance-source-v0.0.6\src\ui\input.cpp`
+- 專案 Phase 0 紀錄：[2026-11-05 Phase 0](../docs/logs/2026-11-05-phase0.md)
 - 免責：虛擬裝置輸入連線遊戲有帳號風險（AnyaDance DISCLAIMER）；本文件僅整理操作，不改變該風險。

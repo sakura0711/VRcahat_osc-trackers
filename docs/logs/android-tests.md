@@ -8,7 +8,7 @@
 - 產物：package `com.vrchattrack.singlephone`、versionCode **2**、versionName **0.2.0**。APK SHA-256：`2a7f37489d0062783cbd3fa74d7fe5acbdcd0fa64ba72860c41f4efdad63f8f9`。目前建置完成，手機更新與實機影像擷取仍待確認。
 - 本機配對與 UDP 共用來源序列化，新增影格／方向／模型資訊，保持協定 version 1 與座標四位小數。影像對照預設關閉，不會因啟動 App、開始 LAN 或重啟而自動啟用；照片不透過 UDP 傳送。保存於 App 私有 no-backup 目錄，使用者明確選擇才匯出 ZIP。
 
-操作與限制見 [同影格工具](../windows/IMAGE_PAIR_GUIDE.md)。Windows 最新 **69 項自動測試通過**；新檢視工具不開 socket／不送 OSC。手機端實際影像與點位對齊、保存負載、背景停止與匯出仍待驗證；不得據此宣稱高度精度、手機 FBT 或 Unity smoke test 已通過。
+操作與限制見 [同影格工具](../../windows/IMAGE_PAIR_GUIDE.md)。Windows 最新 **69 項自動測試通過**；新檢視工具不開 socket／不送 OSC。手機端實際影像與點位對齊、保存負載、背景停止與匯出仍待驗證；不得據此宣稱高度精度、手機 FBT 或 Unity smoke test 已通過。
 
 驗證日期：2026-11-03  
 目標：確認 Android 原生基線的型別、虛擬裝置啟動與 CAMERA 權限流程。

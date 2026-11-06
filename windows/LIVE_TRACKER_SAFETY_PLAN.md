@@ -37,4 +37,4 @@
 4. 視需要以已存的不同輪高頻 JSONL 進行離線檢查，不能把它與照片 ZIP 當同一輪，也不能由稀疏照片推斷即時延遲。程式變更後在 `windows` 執行 `python -B -m unittest discover -v`，並報告實際結果。
 5. 自動檢查通過後仍不宣稱遊戲內已驗收。需要使用者更新 App 或配合實機前，先依其當輪指示以語音通知、預留就位時間；若當輪明確要求不用語音則遵照。真人測試排成完整一輪，結束後才請使用者回答。
 
-後續驗證須確認 VRChat 自身為站姿模式、FBT 開關可用且目前 tracker ID 映射明確；前次的坐姿模式錯誤、探針逾時與新一輪成功紀錄見 [排查紀錄](FBT_DIAGNOSTIC_2026-11-06.md) 及 [實驗結果](TEST_RESULTS.md)。純 Desktop FBT、遠端手機動作與長時間穩定性仍待驗證；Unity smoke 仍受 License Client IPC timeout 阻擋。
+後續驗證須確認 VRChat 自身為站姿模式、FBT 開關可用且目前 tracker ID 映射明確；前次的坐姿模式錯誤、探針逾時與新一輪成功紀錄見 [排查紀錄](../docs/logs/2026-11-06-fbt-diagnostic.md) 及 [實驗結果](../docs/logs/windows-tests.md)。純 Desktop FBT、遠端手機動作與長時間穩定性仍待驗證；Unity smoke 仍受 License Client IPC timeout 阻擋。

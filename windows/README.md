@@ -3,7 +3,7 @@
 使用 Python 3.12 的標準函式庫，沒有額外套件。預設只監聽 127.0.0.1；手機實測須綁定電腦的私人 IPv4，並可限制手機來源：
 
 ~~~powershell
-python -B pose_receiver.py --bind 192.168.137.1 --port 8765 --allow-sender 192.168.137.189
+python -B pose_receiver.py --bind <PC_IP> --port 8765 --allow-sender <PHONE_IP>
 ~~~
 
 位址請依目前電腦與手機實際網路修改。按 Ctrl+C 結束。若要自動結束，可加 --duration 60。接收端不接受 0.0.0.0 或公開 IP；不要將埠轉發至網際網路。
@@ -39,7 +39,7 @@ python -B -m unittest discover -v
 
 ## Phase 0：原生 OSC Tracker 探針
 
-**VR 模式 Phase 0 已通過**：AnyaDance 自帶 SteamVR trackers 停用後，`tracker_probe.py` 送出的合成髖與雙腳完成校正、本機動作與私人房間遠端盲測。這不等於手機姿勢已接入。結果見 [OSC Tracker MVP 計畫](../OSC_TRACKER_MVP_PLAN.md)，必要時重做的指令見 [探針操作](TRACKER_PHASE0.md)。
+**VR 模式 Phase 0 已通過**：AnyaDance 自帶 SteamVR trackers 停用後，`tracker_probe.py` 送出的合成髖與雙腳完成校正、本機動作與私人房間遠端盲測。這不等於手機姿勢已接入。結果見 [OSC Tracker MVP 計畫](../docs/PLAN.md)，必要時重做的指令見 [探針操作](TRACKER_PHASE0.md)。
 
 ## Phase 1：TrackerOutput 元件
 
@@ -48,7 +48,7 @@ python -B -m unittest discover -v
 `--output none` 是預設，沒有 OSC socket；只有明確指定 `--output trackers` 才會建立本機 OSC 輸出。即時 tracker 指令範例（數值只示意已知前鏡頭設定；啟用前須重新確認當次 ID、手機左右方向、髖高和 yaw）：
 
 ~~~powershell
-python -B pose_receiver.py --bind 192.168.137.1 --allow-sender 192.168.137.189 --port 8765 --output trackers --tracker-hip-id 1 --tracker-left-foot-id 3 --tracker-right-foot-id 4 --tracker-hip-height 0.90 --tracker-mirror yes --tracker-swap-left-right yes --tracker-forward-sign -1 --tracker-yaw 0
+python -B pose_receiver.py --bind <PC_IP> --allow-sender <PHONE_IP> --port 8765 --output trackers --tracker-hip-id 1 --tracker-left-foot-id 3 --tracker-right-foot-id 4 --tracker-hip-height 0.90 --tracker-mirror yes --tracker-swap-left-right yes --tracker-forward-sign -1 --tracker-yaw 0
 ~~~
 
 未完成站姿校正前零 tracker 輸出。每幀必要點低信心、無人或資料不完整時不送新姿勢；最後有效 transform 超過 `--tracker-loss-ms`（預設 250 ms，允許 0–5000 ms 的正值）須重校正。`--tracker-hold-ms` 預設 0，不重送舊姿勢；若明確設為正值，最多為 `min(loss, 250 ms)`。突變超過預設 0.5 m 或 90° 會要求重校正；可用 `--tracker-max-jump-m`／`--tracker-max-yaw-jump-deg` 調整，這些初值尚未實機調校。停止發送不保證 VRChat 立即清除最後姿勢。tracker 的平滑、速度限制及失追後過渡尚未完成。
@@ -76,7 +76,7 @@ python -B pose_receiver.py --bind 192.168.137.1 --allow-sender 192.168.137.189 -
 在 `windows` 目錄執行，將範例 PC／手機 IP 與髖高換成當前實際值，並讓兩者位於可互通的私人網路：
 
 ~~~powershell
-python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189 --port 8765 --hip-height 0.90 --mirror yes --swap-left-right --forward-sign -1 --duration 60
+python -B tracker_preview.py --bind <PC_IP> --allow-sender <PHONE_IP> --port 8765 --hip-height 0.90 --mirror yes --swap-left-right --forward-sign -1 --duration 60
 ~~~
 
 上例的鏡像、左右標籤與前向組合來自本次 `SM_A5360` 前鏡頭實測。`--mirror` 只處理 X 座標反射；`--swap-left-right` 另外對調本模組使用的肩、髖、腳踝、腳跟與腳尖標籤。兩者互相獨立，預設不對調標籤。對調後身體右軸也會改變，須重新確認 `--forward-sign`。不同手機或後鏡頭不能直接沿用此組合；以真人自己的左右腳做動作確認，不能依自拍畫面左右判斷。這與 VRChat tracker ID 3／4 的映射是兩個不同層次。
@@ -106,9 +106,9 @@ python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189
 
 ### 同一影格的 2D／3D 對照紀錄（可選）
 
-App 0.2.0 另提供手動啟用、限時的 PNG＋landmarks 本機保存與 ZIP 匯出。真手機擷取／匯出與 Windows 匯入已確認；[新 22 組完整動作影像的離線調查](IMAGE_PAIR_REVIEW_2026-11-06.md) 仍顯示高度低估。純照片流程不需要 ACK。Windows `inspect_pose_pairs.py` 可驗證並產生不開 socket 的離線疊點頁，也可精確連結同一輪 tracker JSONL；[完整操作及實機待驗證項目](IMAGE_PAIR_GUIDE.md)。每 3 秒的照片不能當即時追蹤驗收。這項工具不改 tracker 校正，也不啟用 OSC。
+App 0.2.0 另提供手動啟用、限時的 PNG＋landmarks 本機保存與 ZIP 匯出。真手機擷取／匯出與 Windows 匯入已確認；[新 22 組完整動作影像的離線調查](../docs/logs/2026-11-06-image-pair-review.md) 仍顯示高度低估。純照片流程不需要 ACK。Windows `inspect_pose_pairs.py` 可驗證並產生不開 socket 的離線疊點頁，也可精確連結同一輪 tracker JSONL；[完整操作及實機待驗證項目](IMAGE_PAIR_GUIDE.md)。每 3 秒的照片不能當即時追蹤驗收。這項工具不改 tracker 校正，也不啟用 OSC。
 
-`offline_pose_compare.py` 可用**本機**模型對固定 PNG 做 CPU IMAGE 推論，分別比較各自校正與共用手機校正；不自動下載、不開 receiver、不送 OSC，CLI 阻止 Python socket。它是選用的研究工具，需另有 MediaPipe／OpenCV；一般測試不依賴這些套件。新推論保留獨立身份，不沿用手機傳輸／處理時間；無效樣本記為缺值。輸出應留在忽略的 `captures` 新目錄，原始檔不覆寫。完整指令與同圖 Full 較接近箱高、但仍未通過的結果見 [固定影像模型比較](OFFLINE_MODEL_COMPARISON_2026-11-06.md)。
+`offline_pose_compare.py` 可用**本機**模型對固定 PNG 做 CPU IMAGE 推論，分別比較各自校正與共用手機校正；不自動下載、不開 receiver、不送 OSC，CLI 阻止 Python socket。它是選用的研究工具，需另有 MediaPipe／OpenCV；一般測試不依賴這些套件。新推論保留獨立身份，不沿用手機傳輸／處理時間；無效樣本記為缺值。輸出應留在忽略的 `captures` 新目錄，原始檔不覆寫。完整指令與同圖 Full 較接近箱高、但仍未通過的結果見 [固定影像模型比較](../docs/logs/2026-11-06-offline-model-comparison.md)。
 
 `android_replay.py` 會將獨立 Android 回放 JSON 與**完全相同的原 ZIP**核對，再做各自校正／固定手機校正的幾何分析；不開 socket、不送 OSC。核對每張圖的 ID／SHA-256／尺寸／鏡像、模型固定雜湊、mode／delegate、結果數、缺值及 VIDEO 的精確時間，拒絕 silent fallback 與不同輪混用。IMAGE 的框架時間可為 -1，只留作診斷，不冒充影片時間；配對依原圖身份。預設拒絕 synthetic，明確測試允許後仍標示 synthetic。`geometry_comparison_complete` 只有所有選定幀都可比較時才為 true；VIDEO 模擬器資料因校正失敗為 false。完整 APK、指令與待驗證範圍見 [Android 回放指南](../android/REPLAY_GUIDE.md)。
 
