@@ -18,6 +18,8 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 from pose_control import DEFAULT_CONFIDENCE, IDLE_VALUES, JOINTS, OscOutput, PARAMETERS, PoseController, point_confident
+from tracker_bridge import TrackerBridge, TrackerBridgeConfig
+from tracker_pose import TrackerCalibrationConfig
 
 VERSION = 1
 LANDMARK_COUNT = 33
@@ -233,6 +235,10 @@ class PoseBridge:
         self.session: str | None = None
         self.last_progress_ns = 0
 
+    @property
+    def output_ready(self) -> bool:
+        return self.controller.baseline is not None
+
     def send(self, values: dict[str, float], stats: ReceiverStats) -> None:
         if not values:
             return
@@ -281,7 +287,7 @@ def serve(
     duration: float | None,
     report_interval: float,
     allowed_sender: str | None = None,
-    bridge: PoseBridge | None = None,
+    bridge: PoseBridge | TrackerBridge | None = None,
     observer: PacketObserver | None = None,
 ) -> ReceiverStats:
     stats = ReceiverStats()
@@ -342,7 +348,7 @@ def serve(
                             if bridge is not None:
                                 previous_updates = stats.osc_updates
                                 bridge.on_packet(packet, time.perf_counter_ns(), stats)
-                                if (packet["personDetected"] and bridge.controller.baseline is not None
+                                if (packet["personDetected"] and bridge.output_ready
                                         and stats.osc_updates > previous_updates):
                                     stats.pose_to_osc_ms.append((time.perf_counter_ns() - arrival_ns) / 1_000_000.0)
                             if observer is not None:
@@ -364,7 +370,7 @@ def serve(
     return stats
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bind", default="127.0.0.1", help="specific private IPv4 address, default 127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
@@ -372,11 +378,28 @@ def main() -> int:
     parser.add_argument("--duration", type=float, help="stop after this many seconds")
     parser.add_argument("--report-interval", type=float, default=5.0)
     parser.add_argument("--osc", action="store_true", help="send calibrated parameters to local VRChat")
+    parser.add_argument("--output", choices=("none", "parameters", "trackers"),
+                        help="explicit output mode; default none; --osc remains parameters")
     parser.add_argument("--osc-port", type=int, default=9000, help="local VRChat OSC input port")
     parser.add_argument("--calibration-seconds", type=float, default=3.0)
     parser.add_argument("--smoothing-ms", type=float, default=35.0)
     parser.add_argument("--hold-ms", type=float, default=250.0)
-    args = parser.parse_args()
+    parser.add_argument("--tracker-hip-id", type=int)
+    parser.add_argument("--tracker-left-foot-id", type=int)
+    parser.add_argument("--tracker-right-foot-id", type=int)
+    parser.add_argument("--tracker-hip-height", type=float, help="measured standing hip height in metres")
+    parser.add_argument("--tracker-mirror", choices=("yes", "no"))
+    parser.add_argument("--tracker-swap-left-right", choices=("yes", "no"))
+    parser.add_argument("--tracker-forward-sign", type=int, choices=(-1, 1))
+    parser.add_argument("--tracker-yaw", type=float)
+    parser.add_argument("--tracker-loss-ms", type=float)
+    parser.add_argument("--tracker-hold-ms", type=float)
+    parser.add_argument("--tracker-max-jump-m", type=float)
+    parser.add_argument("--tracker-max-yaw-jump-deg", type=float)
+    args = parser.parse_args(argv)
+    if args.osc and args.output is not None:
+        parser.error("--osc conflicts with --output; use one output selector")
+    mode = "parameters" if args.osc else args.output or "none"
     if not private_ipv4(args.bind):
         parser.error("--bind must be a specific RFC1918 or loopback IPv4 address; 0.0.0.0 is not allowed")
     if args.allow_sender and not private_ipv4(args.allow_sender):
@@ -392,13 +415,44 @@ def main() -> int:
     if any(not math.isfinite(value) or value < 0 for value in
            (args.calibration_seconds, args.smoothing_ms, args.hold_ms)):
         parser.error("calibration, smoothing, and hold settings must be finite and nonnegative")
+    tracker_options = (args.tracker_hip_id, args.tracker_left_foot_id, args.tracker_right_foot_id,
+                       args.tracker_hip_height, args.tracker_mirror, args.tracker_swap_left_right,
+                       args.tracker_forward_sign, args.tracker_yaw, args.tracker_loss_ms,
+                       args.tracker_hold_ms, args.tracker_max_jump_m, args.tracker_max_yaw_jump_deg)
+    if mode != "trackers" and any(value is not None for value in tracker_options):
+        parser.error("tracker settings require --output trackers")
+    tracker_config = None
+    if mode == "trackers":
+        if any(value is None for value in tracker_options[:8]):
+            parser.error("tracker output requires three IDs, hip height, mirror, side labels, forward sign and yaw")
+        try:
+            calibration = TrackerCalibrationConfig(
+                standing_hip_height_m=args.tracker_hip_height,
+                neutral_yaw_deg=args.tracker_yaw,
+                mirrored_input=args.tracker_mirror == "yes",
+                swap_left_right=args.tracker_swap_left_right == "yes",
+                forward_sign=args.tracker_forward_sign,
+                loss_timeout_ms=args.tracker_loss_ms if args.tracker_loss_ms is not None else 250.0,
+            )
+            tracker_config = TrackerBridgeConfig(
+                calibration=calibration,
+                slots={"hip": args.tracker_hip_id, "left_foot": args.tracker_left_foot_id,
+                       "right_foot": args.tracker_right_foot_id},
+                hold_ms=args.tracker_hold_ms if args.tracker_hold_ms is not None else 0.0,
+                max_jump_m=args.tracker_max_jump_m if args.tracker_max_jump_m is not None else 0.5,
+                max_yaw_jump_deg=(args.tracker_max_yaw_jump_deg if args.tracker_max_yaw_jump_deg is not None else 90.0),
+            )
+        except ValueError as error:
+            parser.error(str(error))
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.bind((args.bind, args.port))
             print(f"LISTENING {args.bind}:{args.port} (UDP, private network only)", flush=True)
-            bridge = PoseBridge(args.osc_port, args.calibration_seconds, args.smoothing_ms, args.hold_ms) if args.osc else None
+            bridge = (PoseBridge(args.osc_port, args.calibration_seconds, args.smoothing_ms, args.hold_ms)
+                      if mode == "parameters" else
+                      TrackerBridge(tracker_config, args.osc_port) if tracker_config is not None else None)
             if bridge is not None:
-                print(f"OSC enabled: 127.0.0.1:{args.osc_port}; sending does not confirm VRChat reception.", flush=True)
+                print(f"OSC {mode} enabled: 127.0.0.1:{args.osc_port}; sending does not confirm VRChat reception.", flush=True)
             serve(sock, args.duration, args.report_interval, args.allow_sender, bridge)
     except OSError as error:
         print(f"receiver error: {error}", file=sys.stderr)

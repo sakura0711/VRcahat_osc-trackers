@@ -1,0 +1,148 @@
+"""Safety gate for live phone poses before local VRChat OSC tracker output."""
+
+from __future__ import annotations
+
+import math
+import sys
+from dataclasses import dataclass
+from typing import Any, Mapping
+
+from tracker_output import ROLES, TrackerOutput, TrackerTransform
+from tracker_pose import TrackerCalibrationConfig, TrackerPoseCalibrator
+
+
+@dataclass(frozen=True)
+class TrackerBridgeConfig:
+    calibration: TrackerCalibrationConfig
+    slots: Mapping[str, int]
+    hold_ms: float = 0.0
+    max_jump_m: float = 0.5
+    max_yaw_jump_deg: float = 90.0
+
+    def __post_init__(self) -> None:
+        timeout = self.calibration.loss_timeout_ms
+        if not 0 < timeout <= 5_000:
+            raise ValueError("tracker loss timeout must be in (0, 5000] ms")
+        if not math.isfinite(self.hold_ms) or not 0 <= self.hold_ms <= min(timeout, 250):
+            raise ValueError("tracker hold must be in [0, min(loss timeout, 250)] ms")
+        if not math.isfinite(self.max_jump_m) or self.max_jump_m <= 0:
+            raise ValueError("tracker jump limit must be finite and positive")
+        if not math.isfinite(self.max_yaw_jump_deg) or not 0 < self.max_yaw_jump_deg <= 180:
+            raise ValueError("tracker yaw jump limit must be in (0, 180] degrees")
+        if set(self.slots) != set(ROLES) or len(set(self.slots.values())) != len(ROLES) or any(
+            type(slot) is not int or not 1 <= slot <= 8 for slot in self.slots.values()
+        ):
+            raise ValueError("supply distinct tracker IDs 1..8 for all three roles")
+
+
+class TrackerBridge:
+    """Emit complete fresh batches; never turn invalid frames into new poses."""
+
+    def __init__(self, config: TrackerBridgeConfig, port: int = 9000,
+                 output: TrackerOutput | None = None) -> None:
+        self.config = config
+        self.controller = TrackerPoseCalibrator(config.calibration)
+        self.output = output if output is not None else TrackerOutput(config.slots, port)
+        self.session: str | None = None
+        self.last_batch: dict[str, TrackerTransform] | None = None
+        self.last_valid_ns: int | None = None
+        self.state = "calibrating"
+        self.closed = False
+
+    @property
+    def output_ready(self) -> bool:
+        return self.state == "tracking" and not self.closed
+
+    def _state(self, state: str, reason: str) -> None:
+        if state != self.state:
+            self.state = state
+            print(f"TRACKER_STATE {state} reason={reason}", flush=True)
+
+    def _clear(self, reason: str) -> None:
+        self.controller.reset()
+        self.last_batch = None
+        self.last_valid_ns = None
+        self._state("lost", reason)
+
+    def _send(self, transforms: Mapping[str, TrackerTransform], stats: Any) -> None:
+        if self.closed:
+            return
+        try:
+            stats.osc_updates += self.output.send(transforms)
+        except (OSError, ValueError) as error:
+            stats.osc_errors += 1
+            print(f"TRACKER_OUTPUT_ERROR {error}", file=sys.stderr, flush=True)
+            self._clear("output_error")
+            self.output.close()
+            self.closed = True
+
+    def _jumped(self, current: Mapping[str, TrackerTransform]) -> bool:
+        previous = self.last_batch
+        if previous is None:
+            return False
+        for role in ROLES:
+            old, new = previous[role], current[role]
+            if math.dist(old.position, new.position) > self.config.max_jump_m:
+                return True
+            yaw_delta = (new.rotation[1] - old.rotation[1] + 180) % 360 - 180
+            if abs(yaw_delta) > self.config.max_yaw_jump_deg:
+                return True
+        return False
+
+    def on_packet(self, packet: dict[str, Any], now_ns: int, stats: Any) -> None:
+        if self.closed:
+            return
+        if packet["session"] != self.session:
+            self.session = packet["session"]
+            self._clear("new_session")
+            self._state("calibrating", "new_session")
+        was_calibrated = self.controller.calibration is not None
+        transforms = self.controller.ingest(packet, now_ns)
+        if was_calibrated and self.controller.calibration is None:
+            self.last_batch = None
+            self.last_valid_ns = None
+            self._state("lost", "timeout")
+        if not transforms:
+            if self.controller.calibration is None:
+                self._state("calibrating", self.controller.diagnostic.reason)
+            else:
+                self._state("paused", self.controller.diagnostic.reason)
+            return
+        if set(transforms) != set(ROLES):
+            self._clear("incomplete_batch")
+            return
+        if self._jumped(transforms):
+            self._clear("jump")
+            return
+        # Only a complete, confident frame updates the freshness clock.
+        self.last_batch = dict(transforms)
+        self.last_valid_ns = now_ns
+        self._send(transforms, stats)
+        if not self.closed:
+            self._state("tracking", "valid_frame")
+
+    def tick(self, now_ns: int, stats: Any) -> None:
+        if self.closed:
+            return
+        was_calibrated = self.controller.calibration is not None
+        self.controller.tick(now_ns)
+        if was_calibrated and self.controller.calibration is None:
+            self.last_batch = None
+            self.last_valid_ns = None
+            self._state("lost", "timeout")
+            return
+        if self.last_valid_ns is None or self.last_batch is None:
+            return
+        elapsed_ns = now_ns - self.last_valid_ns
+        if elapsed_ns < 0:
+            return
+        if elapsed_ns > max(self.config.hold_ms, 100.0) * 1_000_000:
+            self._state("paused", "hold_expired")
+        elif self.config.hold_ms > 0:
+            self._send(self.last_batch, stats)
+
+    def close(self, stats: Any) -> None:
+        self._clear("stopped")
+        if not self.closed:
+            self.output.close()
+            self.closed = True

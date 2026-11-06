@@ -86,15 +86,21 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 ## Phase 1：TrackerOutput 元件
 
-`tracker_output.py` 提供 OSC Vector3 編碼與只送到本機的 `TrackerOutput`。呼叫端必須提供已校正的公尺位置、Euler 旋轉，以及 `hip`、`left_foot`、`right_foot` 對應的相異 tracker ID（1–8）；當次 VRChat 校正可能把 3／4 對調。元件只送出有提供的角色，傳入無效資料時整批不送。`tracker_probe.py` 已共用此編碼器；loopback 測試覆蓋對調映射及資料格式。
+`tracker_output.py` 提供 OSC Vector3 編碼與只送到本機的 `TrackerOutput`。`pose_receiver.py` 的 `--output trackers` 已透過 `tracker_bridge.py` 使用它；呼叫端須明填當次確認的 `hip`、`left_foot`、`right_foot` 相異 ID（1–8）和校正設定。3／4 曾互換，不可沿用上次映射。這項整合只通過自動測試，**尚未通過手機即時或 VRChat 驗收**。
 
-目前 `pose_receiver.py` **未使用** `TrackerOutput`，仍只在 `--osc` 下輸出六個 Avatar 參數；請勿把這個元件當作手機 FBT 完成。
+`--output none` 是預設，沒有 OSC socket；`--output parameters` 與既有 `--osc` 都走六個 Avatar 參數。`--osc` 和 `--output` 不能同時使用。即時 tracker 指令範例（數值只示意已知前鏡頭設定；啟用前須重新確認當次 ID、手機左右方向、髖高和 yaw）：
+
+~~~powershell
+python -B pose_receiver.py --bind 192.168.137.1 --allow-sender 192.168.137.189 --port 8765 --output trackers --tracker-hip-id 1 --tracker-left-foot-id 3 --tracker-right-foot-id 4 --tracker-hip-height 0.90 --tracker-mirror yes --tracker-swap-left-right yes --tracker-forward-sign -1 --tracker-yaw 0
+~~~
+
+未完成站姿校正前零 tracker 輸出。每幀必要點低信心、無人或資料不完整時不送新姿勢；最後有效 transform 超過 `--tracker-loss-ms`（預設 250 ms，允許 0–5000 ms 的正值）須重校正。`--tracker-hold-ms` 預設 0，不重送舊姿勢；若明確設為正值，最多為 `min(loss, 250 ms)`。突變超過預設 0.5 m 或 90° 會要求重校正；可用 `--tracker-max-jump-m`／`--tracker-max-yaw-jump-deg` 調整，這些初值尚未實機調校。`--hold-ms` 仍只屬六參數模式。狀態會印出校正中、追蹤中、暫停與失追；停止發送不保證 VRChat 立即清除最後姿勢。平滑、速度限制及失追後過渡尚未完成。
 
 ### 已存 ZIP 的三姿勢回放
 
 `tracker_replay.py` 可把已校正的原始手機 landmarks 準備成「站姿 → 右腳上箱 → 放回」三個固定姿勢，預設不建立 socket。已有 95 項 Windows 測試與真實 ZIP 的不送 OSC 檢查；後續本機鏡子已確認原始 ZIP 的右腳抬起清楚可見。探索測試須先依當輪偏好通知、等待使用者就位，再明確啟用 `--osc`、核對 ZIP 雜湊與三個角色 ID；啟用後先維持站姿，收到 `play` 才跑一次有限序列。手機 App 無需更動。完整指令、停止行為與限制見 [回放指南](TRACKER_REPLAY_GUIDE.md)。這不是 live receiver 的 tracker 輸出模式。
 
-即時手機 tracker 的低信心、失追、可調整重新校正門檻與平滑方案見 [安全與平滑計畫](LIVE_TRACKER_SAFETY_PLAN.md)；這些新的 receiver 整合功能目前仍是規劃。
+即時手機 tracker 的已實作保護與後續平滑方案見 [安全與平滑計畫](LIVE_TRACKER_SAFETY_PLAN.md)。
 
 ## 手機 tracker 座標校正基礎（離線）
 
