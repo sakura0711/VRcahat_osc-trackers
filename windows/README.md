@@ -129,7 +129,7 @@ python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189
 
 - `basis`／`scale` 是站姿校正軸與尺度；`model_ankle_right_minus_left_m` 是處理明確鏡像與左右標籤後，模型的右踝減左踝差向量，並非實測房間座標。
 - `vertical_components_m[i] = model_delta[i] × up[i] × scale`；三分量相加等於 `ankle_right_minus_left_y_m`。它也等於兩個輸出踝點高度之差，可在同一幀消去共用地面位移。
-- `ankle_relative_y_m`／`sole_relative_y_m` 是投影後相對髖的踝點／腳底候選高度；`floor_shift_m = -min(sole_relative_y_m)`；`ankle_output_y_m` 是相對踝高加上該位移。`at_ns` 是此輸入影格在 Windows 接收時的單調時間。
+- `ankle_relative_y_m`／`sole_relative_y_m` 是投影後相對髖的踝點／腳底候選高度；`floor_shift_m = -min(sole_relative_y_m)`；`ankle_output_y_m` 是相對踝高加上該位移。`at_ns` 是 Windows observer 處理此封包的本機單調時間，不是相機拍攝時間。
 
 診斷值顯示到小數六位只是減少輸出捨入誤差，**不代表微米精度**。只在當前完整有效影格輸出；無效影格、重新校正或失追不會沿用舊分解值。顯示頻率與位置相同，`--summary-only` 會抑制兩者。單獨啟用高度診斷不寫檔、不建立 OSC 輸出。此選項只改 Windows，手機 App 不需更新。
 

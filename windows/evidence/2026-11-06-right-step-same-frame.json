@@ -1,0 +1,474 @@
+{
+  "date": "2026-11-06",
+  "source_commit": "fe828a63c3d6e3f8c12c727bb681fefe454ff748",
+  "result": "capture_and_replay_verified; physical_height_magnitude_not_accepted",
+  "setup": {
+    "camera": "front",
+    "camera_lens_height_m": 1.25,
+    "person_distance_m": 3,
+    "hip_height_m": 0.9,
+    "box_height_m": 0.2,
+    "previous_forward_step_m": 0.03,
+    "user_confirmed_same_setup": true,
+    "date": "2026-11-06",
+    "camera_tilt_deg": null,
+    "forward_step_this_run_m": null,
+    "actions_confirmed_by_user": true,
+    "stable_box_confirmed_by_user": true
+  },
+  "raw_capture": {
+    "path": "../captures/right-step-20261106-c1eb8ba1.jsonl",
+    "bytes": 9634823,
+    "sha256": "891269c010dda4b1bc70eb3493ad1829b6254f5f600cfabe4d872b17fbb3da00",
+    "git_ignored": true,
+    "images_saved": false
+  },
+  "method": {
+    "protocol": "baseline -> physical right foot on 20cm support -> both feet down",
+    "voice": "Windows SAPI, Hanhan; advance spoken notification and timed movement prompts",
+    "windows_observer_clock": "perf_counter_ns; not subtracted from phone clock",
+    "trim_start_s": 1,
+    "trim_end_s": 0.5,
+    "phase_statistics": "medians of all valid accepted frames in trimmed holds",
+    "component_statistics": "component-wise medians; sums of medians can differ from medians of sums",
+    "phase_stats_rounding_decimals": 6,
+    "height_units": "metres",
+    "image_coordinate_units": "normalized model output; not metres",
+    "independent_images_or_2d_ground_truth_available": false
+  },
+  "source_indices": {
+    "left_shoulder": 12,
+    "right_shoulder": 11,
+    "left_hip": 24,
+    "right_hip": 23,
+    "left_ankle": 28,
+    "right_ankle": 27,
+    "left_heel": 30,
+    "right_heel": 29,
+    "left_toe": 32,
+    "right_toe": 31
+  },
+  "calibration": {
+    "right": [
+      -0.990734963,
+      -0.071559021,
+      -0.115427635
+    ],
+    "up": [
+      0.088454406,
+      -0.984931331,
+      -0.1486139
+    ],
+    "forward": [
+      0.103053629,
+      0.15744707,
+      -0.982135617
+    ],
+    "scale": 1.042108745
+  },
+  "phases": [
+    {
+      "phase": "baseline",
+      "frames": 169,
+      "transform_frames": 169,
+      "height_m": {
+        "hip": {
+          "median": 0.905633,
+          "min": 0.902428,
+          "max": 0.909732
+        },
+        "left_foot": {
+          "median": 0.090618,
+          "min": 0.089334,
+          "max": 0.092503
+        },
+        "right_foot": {
+          "median": 0.1159,
+          "min": 0.112718,
+          "max": 0.120954
+        }
+      },
+      "hip_yaw_deg": -0.199,
+      "calibration": {
+        "right": [
+          -0.990734963,
+          -0.071559021,
+          -0.115427635
+        ],
+        "up": [
+          0.088454406,
+          -0.984931331,
+          -0.1486139
+        ],
+        "forward": [
+          0.103053629,
+          0.15744707,
+          -0.982135617
+        ],
+        "scale": 1.042108745
+      },
+      "model_ankle_delta_m": [
+        -0.2037,
+        -0.0424,
+        -0.0006
+      ],
+      "vertical_components_m": [
+        -0.018777,
+        0.04352,
+        0.000093
+      ],
+      "ankle_relative_y_m": [
+        -0.814954,
+        -0.789922
+      ],
+      "sole_relative_y_m": [
+        -0.863603,
+        -0.905633,
+        -0.837656,
+        -0.879305
+      ],
+      "floor_shift_m": 0.905633,
+      "right_minus_left_y_m": 0.024775,
+      "image_xy": {
+        "left_ankle": [
+          0.4707,
+          0.7965
+        ],
+        "right_ankle": [
+          0.5407,
+          0.7884
+        ],
+        "left_hip": [
+          0.4666,
+          0.6025
+        ],
+        "right_hip": [
+          0.5322,
+          0.601
+        ]
+      },
+      "image_right_minus_left_y": -0.0081,
+      "confidence_min": {
+        "left_ankle": 0.9938,
+        "right_ankle": 0.9898,
+        "left_heel": 0.8959,
+        "right_heel": 0.8595,
+        "left_toe": 0.9898,
+        "right_toe": 0.9856
+      }
+    },
+    {
+      "phase": "right_box",
+      "frames": 176,
+      "transform_frames": 176,
+      "height_m": {
+        "hip": {
+          "median": 0.896542,
+          "min": 0.887327,
+          "max": 0.900568
+        },
+        "left_foot": {
+          "median": 0.085295,
+          "min": 0.078858,
+          "max": 0.092
+        },
+        "right_foot": {
+          "median": 0.184602,
+          "min": 0.175822,
+          "max": 0.194261
+        }
+      },
+      "hip_yaw_deg": 10.259,
+      "calibration": {
+        "right": [
+          -0.990734963,
+          -0.071559021,
+          -0.115427635
+        ],
+        "up": [
+          0.088454406,
+          -0.984931331,
+          -0.1486139
+        ],
+        "forward": [
+          0.103053629,
+          0.15744707,
+          -0.982135617
+        ],
+        "scale": 1.042108745
+      },
+      "model_ankle_delta_m": [
+        -0.2221,
+        -0.12785,
+        0.073
+      ],
+      "vertical_components_m": [
+        -0.020473,
+        0.131226,
+        -0.011306
+      ],
+      "ankle_relative_y_m": [
+        -0.811764,
+        -0.712112
+      ],
+      "sole_relative_y_m": [
+        -0.859512,
+        -0.896542,
+        -0.758564,
+        -0.804488
+      ],
+      "floor_shift_m": 0.896542,
+      "right_minus_left_y_m": 0.099185,
+      "image_xy": {
+        "left_ankle": [
+          0.4669,
+          0.7948
+        ],
+        "right_ankle": [
+          0.54055,
+          0.7584
+        ],
+        "left_hip": [
+          0.4539,
+          0.5982
+        ],
+        "right_hip": [
+          0.5196,
+          0.5916
+        ]
+      },
+      "image_right_minus_left_y": -0.0365,
+      "confidence_min": {
+        "left_ankle": 0.992,
+        "right_ankle": 0.9746,
+        "left_heel": 0.88,
+        "right_heel": 0.8315,
+        "left_toe": 0.9847,
+        "right_toe": 0.9678
+      }
+    },
+    {
+      "phase": "right_down",
+      "frames": 223,
+      "transform_frames": 223,
+      "height_m": {
+        "hip": {
+          "median": 0.89511,
+          "min": 0.893212,
+          "max": 0.900481
+        },
+        "left_foot": {
+          "median": 0.093845,
+          "min": 0.091758,
+          "max": 0.095985
+        },
+        "right_foot": {
+          "median": 0.106248,
+          "min": 0.103147,
+          "max": 0.113776
+        }
+      },
+      "hip_yaw_deg": -0.967,
+      "calibration": {
+        "right": [
+          -0.990734963,
+          -0.071559021,
+          -0.115427635
+        ],
+        "up": [
+          0.088454406,
+          -0.984931331,
+          -0.1486139
+        ],
+        "forward": [
+          0.103053629,
+          0.15744707,
+          -0.982135617
+        ],
+        "scale": 1.042108745
+      },
+      "model_ankle_delta_m": [
+        -0.205,
+        -0.0271,
+        -0.0252
+      ],
+      "vertical_components_m": [
+        -0.018897,
+        0.027816,
+        0.003903
+      ],
+      "ankle_relative_y_m": [
+        -0.801608,
+        -0.788861
+      ],
+      "sole_relative_y_m": [
+        -0.849634,
+        -0.89511,
+        -0.836874,
+        -0.879462
+      ],
+      "floor_shift_m": 0.89511,
+      "right_minus_left_y_m": 0.012702,
+      "image_xy": {
+        "left_ankle": [
+          0.4742,
+          0.7966
+        ],
+        "right_ankle": [
+          0.5429,
+          0.7946
+        ],
+        "left_hip": [
+          0.4647,
+          0.6049
+        ],
+        "right_hip": [
+          0.5332,
+          0.6032
+        ]
+      },
+      "image_right_minus_left_y": -0.002,
+      "confidence_min": {
+        "left_ankle": 0.9932,
+        "right_ankle": 0.9912,
+        "left_heel": 0.8966,
+        "right_heel": 0.8734,
+        "left_toe": 0.9893,
+        "right_toe": 0.9873
+      }
+    }
+  ],
+  "deltas_vs_ground_reference": {
+    "baseline": {
+      "right_ankle_output_change_m": 0.068702,
+      "right_ankle_hip_relative_change_m": 0.07781,
+      "common_floor_shift_change_m": -0.009091,
+      "paired_ankle_vertical_change_m": 0.07441,
+      "model_ankle_delta_vector_change_m": [
+        -0.0184,
+        -0.08545,
+        0.0736
+      ],
+      "scaled_norm_of_median_vector_change_m": 0.119079895,
+      "projection_component_changes_m": [
+        -0.001696,
+        0.087706,
+        -0.011399
+      ],
+      "image_right_minus_left_y_change": -0.0284
+    },
+    "right_down": {
+      "right_ankle_output_change_m": 0.078354,
+      "right_ankle_hip_relative_change_m": 0.076749,
+      "common_floor_shift_change_m": 0.001432,
+      "paired_ankle_vertical_change_m": 0.086483,
+      "model_ankle_delta_vector_change_m": [
+        -0.0171,
+        -0.10075,
+        0.0982
+      ],
+      "scaled_norm_of_median_vector_change_m": 0.147693733,
+      "projection_component_changes_m": [
+        -0.001576,
+        0.10341,
+        -0.015209
+      ],
+      "image_right_minus_left_y_change": -0.0345
+    }
+  },
+  "controlled_holds": {
+    "accepted_frames": 568,
+    "valid_transform_frames": 568,
+    "all_frames_valid": true
+  },
+  "receiver": {
+    "elapsed_s": 83.05,
+    "received": 1542,
+    "accepted": 1542,
+    "pose_frames": 1542,
+    "no_pose_frames": 0,
+    "pose_frame_pct": 100,
+    "schema_errors": 0,
+    "oversized": 0,
+    "udp_resets": 0,
+    "unauthorized": 0,
+    "ack_errors": 0,
+    "out_of_order": 0,
+    "sequence_gaps": 0,
+    "estimated_gap_pct": 0,
+    "arrival_fps": 19.53,
+    "pose_arrival_fps": 19.53,
+    "interval_p50_ms": 47.9709,
+    "interval_p95_ms": 88.4733,
+    "interval_jitter_p95_ms": 66.958,
+    "receiver_p50_ms": 0.4291,
+    "receiver_p95_ms": 0.6524,
+    "phone_processing_p50_ms": 86.885962,
+    "phone_processing_p95_ms": 135.843231,
+    "pose_to_osc_p50_ms": null,
+    "pose_to_osc_p95_ms": null,
+    "packet_p95_bytes": 5199,
+    "sessions": 1,
+    "osc_updates": 0,
+    "osc_errors": 0,
+    "joint_confident_pct": {
+      "Puppet/LeftArmRaise": 98.12,
+      "Puppet/RightArmRaise": 98.05,
+      "Puppet/LeftElbowFlex": 97.86,
+      "Puppet/RightElbowFlex": 97.86,
+      "Puppet/LeftKneeFlex": 95.53,
+      "Puppet/RightKneeFlex": 95.2
+    }
+  },
+  "preview": {
+    "accepted_frames": 1542,
+    "pose_frames": 1542,
+    "transform_frames": 1413,
+    "transform_frame_pct": 91.63,
+    "sessions": 1,
+    "calibrations": 1,
+    "tracking_losses": 1,
+    "rejection_frames": {
+      "image_confidence": 75
+    },
+    "blocked_landmark_frames": {
+      "left_heel": 75,
+      "left_toe": 75,
+      "right_toe": 75,
+      "left_ankle": 74,
+      "right_heel": 73,
+      "right_ankle": 69,
+      "left_hip": 30,
+      "right_hip": 29
+    }
+  },
+  "replay": {
+    "frames": 1542,
+    "transform_frames": 1413,
+    "ticks": 2060,
+    "summaries": 1,
+    "verified": true,
+    "exit_code": 0,
+    "sockets_opened": false
+  },
+  "lifecycle": {
+    "guide_complete": true,
+    "preview_exit_code": 0,
+    "first_low_confidence_after_complete_s": 5.1615774,
+    "tracking_losses_during_controlled_holds": 0,
+    "tracking_losses_after_complete": 1
+  },
+  "findings": [
+    "Right ankle output rose about 6.9-7.8cm, while hip-relative ankle rise was about 7.7-7.8cm before common floor correction.",
+    "The scaled norm of the difference between representative model ankle-separation vectors was about 11.9cm/14.8cm against pre/post references. A fixed unit-axis projection cannot make that representative difference 20cm at unchanged scale.",
+    "The source 3D motion is already insufficient to reproduce the known support height under the current assumptions; floor correction alone does not explain the discrepancy.",
+    "No images were captured, so correct 2D localization versus 3D reconstruction error cannot be resolved from these coordinate records alone.",
+    "The estimated up axis differs from negative model Y by about 9.96 degrees; this is not a measured physical camera tilt."
+  ],
+  "limitations": [
+    "Ankle-to-sole posture changes and physical body yaw were not externally measured.",
+    "Input setting of 90cm hip height is not independent evidence of output accuracy.",
+    "Different results from the prior run do not demonstrate improvement; pose transformation math was unchanged.",
+    "Summary values were rounded; original full-precision packets and diagnostics remain in the local capture."
+  ]
+}
