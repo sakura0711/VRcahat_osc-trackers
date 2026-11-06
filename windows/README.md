@@ -100,7 +100,7 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 ### 真手機離線預覽
 
-`tracker_preview.py` 會沿用 receiver 的封包驗證、來源限制及 ACK，只在終端機顯示校正進度與三個 tracker 的推算公尺位置／yaw，**不建立 OSC 輸出**。它不記錄原始 landmark 或影像。`--hip-height` 是實測站姿髖高，不是總身高；`--forward-sign` 須以實際腳尖方向選擇。先用 `--yaw 0` 檢查相對方向，絕對 HMD 對齊仍待驗證。
+`tracker_preview.py` 會沿用 receiver 的封包驗證、來源限制及 ACK，在終端機顯示校正進度與三個 tracker 的推算公尺位置／yaw，**不建立 OSC 輸出**。預設不記錄原始 landmarks；明確指定 `--record PATH` 才保存同一封包的 2D／3D 座標與診斷，始終不保存影像。`--hip-height` 是實測站姿髖高，不是總身高；`--forward-sign` 須以實際腳尖方向選擇。先用 `--yaw 0` 檢查相對方向，絕對 HMD 對齊仍待驗證。
 
 在 `windows` 目錄執行，將範例 PC／手機 IP 與髖高換成當前實際值，並讓兩者位於可互通的私人網路：
 
@@ -112,7 +112,7 @@ python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189
 
 啟動後才在手機 App 輸入相同的 PC IP 與 UDP 埠、按「開始傳送」，確認 ACK；站立約 3 秒後依序抬左腳、放下、抬右腳、放下、蹲下、轉身。`PREVIEW_TRACKERS` 應顯示對應腳高度上升、蹲下時髖降低、轉身時 yaw 改變。`PREVIEW_WAIT` 表示校正或追蹤暫停；`PREVIEW_LOST` 表示須重新站姿校正。若始終無法校正，可再以另一個 `--forward-sign` 做獨立的離線診斷，並記下哪個方向符合真人動作。此預覽不能證明 VRChat IK、FBT 或遠端同步。
 
-實機驗收應先排好完整動作順序，以語音／倒數和時間標記分段，做完才回覆；不要要求使用者一邊抬腳或轉身一邊打字。2026-11-05 的語音複驗因此發現早期手動觀察未可靠對齊真人動作時間，撤回其左右映射結論；新版結果見 `TEST_RESULTS.md`。
+實機驗收應先排好完整動作順序，以語音／倒數和時間標記分段，做完才回覆；不要要求使用者一邊抬腳或轉身一邊打字。使用者不會持續把 Codex 放在前景；進入任何需要真人配合的流程前，必須先播放「接下來需要協助測試」的語音提醒，預留就位時間，再以語音明確提示正式開始。不能只靠聊天文字通知。2026-11-05 的語音複驗因此發現早期手動觀察未可靠對齊真人動作時間，撤回其左右映射結論；新版結果見 `TEST_RESULTS.md`。
 
 `PREVIEW_WAIT` 也會顯示 `reason` 與 `blocked_landmarks`。例如 `image_confidence`／`world_confidence` 會列出低信心的腳踝或腳尖；`calibration_forward` 表示腳尖前向不符合設定；`calibration_turn_or_lean`、`calibration_height_changed` 或 `calibration_feet_not_level` 表示站姿校正條件未通過。每幀只回報首先未通過的檢查，不能把它當成所有問題的完整清單。
 
@@ -131,7 +131,27 @@ python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189
 - `vertical_components_m[i] = model_delta[i] × up[i] × scale`；三分量相加等於 `ankle_right_minus_left_y_m`。它也等於兩個輸出踝點高度之差，可在同一幀消去共用地面位移。
 - `ankle_relative_y_m`／`sole_relative_y_m` 是投影後相對髖的踝點／腳底候選高度；`floor_shift_m = -min(sole_relative_y_m)`；`ankle_output_y_m` 是相對踝高加上該位移。`at_ns` 是此輸入影格在 Windows 接收時的單調時間。
 
-診斷值顯示到小數六位只是減少輸出捨入誤差，**不代表微米精度**。只在當前完整有效影格輸出；無效影格、重新校正或失追不會沿用舊分解值。顯示頻率與位置相同，`--summary-only` 會抑制兩者。工具仍不寫檔、不建立 OSC 輸出；需要保存實測證據時另行明確擷取終端機衍生值。此選項只改 Windows，手機 App 不需更新。
+診斷值顯示到小數六位只是減少輸出捨入誤差，**不代表微米精度**。只在當前完整有效影格輸出；無效影格、重新校正或失追不會沿用舊分解值。顯示頻率與位置相同，`--summary-only` 會抑制兩者。單獨啟用高度診斷不寫檔、不建立 OSC 輸出。此選項只改 Windows，手機 App 不需更新。
+
+### 同一影格的 2D／3D 對照紀錄（可選）
+
+需要定位高度偏差時，在預覽指令加上 `--record captures/right-step-20261106.jsonl`。目錄會自動建立；檔案以獨佔方式建立，已存在時直接失敗，不能覆寫先前量測。`captures` 已由 Git 忽略；此類檔案**包含原始姿勢座標**，不會自動加入版本控制。
+
+`tracker_recording.py` 的 JSONL 檔案包含設定、原始角色索引與下列逐封包資料：
+
+1. `packet` 保留同一個有效封包的 session、seq、手機時間戳、完整 `landmarks`／`worldLandmarks` 與信心值，內容未反射或對調標籤。2D 點是影像正規化座標，其 z 不能當公尺；3D 是模型的髖中心估計，不是外部實測真值。
+2. 同一筆 `frame` 另含本次 `at_ns`、拒絕原因、完整精度的 transforms 與高度分解。`source_indices` 說明校正器使用的真人角色對應哪個原始索引；鏡像反射由設定另外描述。無效影格保存當前來源資料，transforms 為空、分解為 null，避免混入上一幀。
+3. 所有接收端接受的封包都會記錄，包含就位、校正、低信心與無人體；不受約 4 Hz 顯示節流或 `--summary-only` 影響。被 receiver 拒絕的格式、來源或舊序號不會進入檔案。每次 observer tick 也會保存，供離線還原超時時序。`at_ns` 是 Windows observer 的本機處理時間，不與手機時鐘相減。
+
+此記錄不包含相機影像，也不建立 OSC 輸出。正常結束會寫入 preview summary；中途終止可能沒有最後 summary。每行及時刷新到檔案，但不能保證斷電時所有資料已落到儲存裝置。寫檔會增加處理工作量，不能把此量測當作未記錄時的效能數字。
+
+停止接收後可完全離線核對：
+
+~~~powershell
+python -B tracker_recording.py captures/right-step-20261106.jsonl
+~~~
+
+重播逐筆使用已保存的來源封包、設定與 tick，核對拒絕原因、transforms 與高度分解；不開 socket。`REPLAY_VERIFIED` 只表示可重現，不能證明位置準確；`summaries=0` 表示沒有完整收尾紀錄。語音引導量測可在同一檔案加入具本機時間戳的 phase 標記，以動作區間對照來源點；動作結束後才請使用者確認。
 
 離線校正另外拒絕超出 ±5 m 的 hip-centred world landmark（`coordinate_bounds`），以及髖軸無法決定水平朝向的影格（`hip_direction`）。超時清除校正後仍保留本機時間高水位，倒退時間戳不能加入校正；新手機工作階段的明確 reset 才會清除時間高水位。所有產生的 transform 都會再檢查有限數值。
 

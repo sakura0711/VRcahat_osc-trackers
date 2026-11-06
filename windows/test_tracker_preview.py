@@ -193,7 +193,8 @@ class TrackerPreviewTests(unittest.TestCase):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as available:
             available.bind(("127.0.0.1", 0))
             port = available.getsockname()[1]
-        with mock.patch("pose_receiver.OscOutput", side_effect=AssertionError("OSC opened")) as osc:
+        with mock.patch("pose_receiver.OscOutput", side_effect=AssertionError("OSC opened")) as osc, \
+                mock.patch("tracker_preview.TrackerRecording") as recording:
             with contextlib.redirect_stdout(io.StringIO()):
                 result = main(["--bind", "127.0.0.1", "--port", str(port),
                                "--hip-height", "0.9", "--mirror", "yes",
@@ -201,6 +202,7 @@ class TrackerPreviewTests(unittest.TestCase):
                                "--duration", "0.1", "--summary-only", "--height-diagnostics"])
         self.assertEqual(result, 0)
         osc.assert_not_called()
+        recording.assert_not_called()
 
 
 if __name__ == "__main__":

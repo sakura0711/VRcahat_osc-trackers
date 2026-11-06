@@ -1,9 +1,9 @@
 """Preview phone-derived tracker positions on the terminal without sending OSC.
 
 Run on a private PC IPv4 while the Android app sends to the same UDP port.
-Only derived coordinates and aggregate receiver statistics are printed; neither
-images nor raw landmarks are saved. This is a direction/quality diagnostic, not
-a VRChat FBT test or proof of absolute HMD alignment.
+Only derived coordinates and aggregate receiver statistics are printed by
+default. --record explicitly saves same-packet 2D/3D landmarks and diagnostics;
+images are never saved. This is not a VRChat FBT or absolute alignment test.
 """
 
 from __future__ import annotations
@@ -14,11 +14,13 @@ import math
 import socket
 import sys
 from collections import Counter
+from contextlib import ExitStack
 from typing import Any
 
 from pose_receiver import private_ipv4, serve
 from tracker_pose import HeightDiagnostics, LANDMARK_NAMES, TrackerCalibrationConfig, TrackerPoseCalibrator
 from tracker_output import TrackerTransform
+from tracker_recording import TrackerRecording
 
 
 def display_transform(transform: TrackerTransform) -> dict[str, Any]:
@@ -47,7 +49,8 @@ def display_height_diagnostics(value: HeightDiagnostics, now_ns: int) -> dict[st
 
 class TrackerPreview:
     def __init__(self, config: TrackerCalibrationConfig, display_interval_s: float = 0.25,
-                 summary_only: bool = False, height_diagnostics: bool = False) -> None:
+                 summary_only: bool = False, height_diagnostics: bool = False,
+                 recording: TrackerRecording | None = None) -> None:
         self.controller = TrackerPoseCalibrator(config)
         self.session: str | None = None
         self.display_interval_ns = int(display_interval_s * 1e9)
@@ -55,6 +58,7 @@ class TrackerPreview:
         self.last_summary_ns: int | None = None
         self.summary_only = summary_only
         self.height_diagnostics = height_diagnostics
+        self.recording = recording
         self.frames = 0
         self.pose_frames = 0
         self.transform_frames = 0
@@ -89,6 +93,8 @@ class TrackerPreview:
 
     def report_final(self) -> None:
         self._show("PREVIEW_FINAL", self.summary())
+        if self.recording is not None:
+            self.recording.write({"type": "summary", "preview": self.summary()})
 
     def on_packet(self, packet: dict[str, Any], now_ns: int) -> None:
         self.frames += 1
@@ -114,6 +120,8 @@ class TrackerPreview:
         elif diagnostic.reason not in ("calibrating", "calibrated"):
             self.rejections[diagnostic.reason] += 1
             self.blocked_landmarks.update(LANDMARK_NAMES[index] for index in diagnostic.landmarks)
+        if self.recording is not None:
+            self.recording.frame(packet, now_ns, self.controller, transforms)
         self._maybe_summary(now_ns)
         if self.summary_only:
             return
@@ -136,6 +144,8 @@ class TrackerPreview:
     def tick(self, now_ns: int) -> None:
         was_ready = self.controller.calibration is not None
         self.controller.tick(now_ns)
+        if self.recording is not None:
+            self.recording.write({"type": "tick", "at_ns": now_ns})
         if was_ready and self.controller.calibration is None:
             self.tracking_losses += 1
             print("PREVIEW_LOST: no complete pose within timeout; stand still to recalibrate.", flush=True)
@@ -160,6 +170,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="show events and quality totals without per-frame coordinates")
     parser.add_argument("--height-diagnostics", action="store_true",
                         help="show model ankle separation, calibration axes and floor-shift decomposition; no OSC")
+    parser.add_argument("--record", metavar="PATH", help="opt in to same-packet raw 2D/3D JSONL capture; never overwrites")
     args = parser.parse_args(argv)
     if not private_ipv4(args.bind) or args.bind == "0.0.0.0":
         parser.error("--bind must be a specific RFC1918 or loopback IPv4 address")
@@ -180,11 +191,15 @@ def main(argv: list[str] | None = None) -> int:
     except ValueError as error:
         parser.error(str(error))
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        with ExitStack() as stack:
+            recording = stack.enter_context(TrackerRecording(args.record, config)) if args.record else None
+            sock = stack.enter_context(socket.socket(socket.AF_INET, socket.SOCK_DGRAM))
             sock.bind((args.bind, args.port))
             print(f"PREVIEW_LISTENING {args.bind}:{args.port}; no OSC socket is opened.", flush=True)
+            if recording is not None:
+                print(f"PREVIEW_RECORDING {recording.path}; raw 2D/3D landmarks, no images.", flush=True)
             preview = TrackerPreview(config, summary_only=args.summary_only,
-                                     height_diagnostics=args.height_diagnostics)
+                                     height_diagnostics=args.height_diagnostics, recording=recording)
             try:
                 serve(sock, args.duration, 30.0, args.allow_sender, observer=preview)
             finally:
