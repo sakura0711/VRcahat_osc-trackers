@@ -1,6 +1,6 @@
 # Phase 0：合成 OSC Tracker 驗收
 
-**結果（2026-11-05）：虛擬 HMD 的 VR 模式已通過。** AnyaDance 自帶 SteamVR trackers 停用後，本探針的 OSC 髖與雙腳完成 FBT 校正；本機鏡子與不知切換時間／腳別的遠端玩家都看到兩輪右腳抬起、放下。這只驗證合成 tracker，手機姿勢仍待接入。純 Desktop 只看到 OSC Debug 封包，未完成 FBT。
+**結果（2026-11-05）：虛擬 HMD 的 VR 模式已通過。** AnyaDance 自帶 SteamVR trackers 停用後，本探針的 OSC 髖與雙腳完成 FBT 校正；本機鏡子與不知切換時間／腳別的遠端玩家都看到兩輪右腳抬起、放下。這只驗證合成 tracker；後續已存手機姿勢回放在本機可見，即時手機姿勢仍待接入。純 Desktop 只看到 OSC Debug 封包，未完成 FBT。
 
 詳細的 VRChat 日誌映射與時間見 [Phase 0 證據](../VIRTUAL_HMD_PHASE0_PLAN.md)。**已通過的實機驗收不需例行重做。** 以下指令供迴歸或新環境重現。
 
