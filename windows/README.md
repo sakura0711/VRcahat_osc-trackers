@@ -137,6 +137,8 @@ python -B tracker_preview.py --bind 192.168.137.1 --allow-sender 192.168.137.189
 
 App 0.2.0 另提供手動啟用、限時的 PNG＋landmarks 本機保存與 ZIP 匯出。真手機擷取／匯出與 Windows 匯入已確認；[新 22 組完整動作影像的離線調查](IMAGE_PAIR_REVIEW_2026-11-06.md) 仍顯示高度低估。純照片流程不需要 ACK。Windows `inspect_pose_pairs.py` 可驗證並產生不開 socket 的離線疊點頁，也可精確連結同一輪 tracker JSONL；[完整操作及實機待驗證項目](IMAGE_PAIR_GUIDE.md)。每 3 秒的照片不能當即時追蹤驗收。這項工具不改 tracker 校正，也不啟用 OSC。
 
+`offline_pose_compare.py` 可用**本機**模型對固定 PNG 做 CPU IMAGE 推論，分別比較各自校正與共用手機校正；不自動下載、不開 receiver、不送 OSC，CLI 阻止 Python socket。它是選用的研究工具，需另有 MediaPipe／OpenCV；一般測試不依賴這些套件。新推論保留獨立身份，不沿用手機傳輸／處理時間；無效樣本記為缺值。輸出應留在忽略的 `captures` 新目錄，原始檔不覆寫。完整指令與同圖 Full 較接近箱高、但仍未通過的結果見 [固定影像模型比較](OFFLINE_MODEL_COMPARISON_2026-11-06.md)。
+
 需要定位高度偏差時，在預覽指令加上 `--record captures/right-step-20261106.jsonl`。目錄會自動建立；檔案以獨佔方式建立，已存在時直接失敗，不能覆寫先前量測。`captures` 已由 Git 忽略；此類檔案**包含原始姿勢座標**，不會自動加入版本控制。
 
 `tracker_recording.py` 的 JSONL 檔案包含設定、原始角色索引與下列逐封包資料：

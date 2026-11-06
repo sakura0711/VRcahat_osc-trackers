@@ -43,6 +43,8 @@ App 的本機配對與 UDP 共用 `PoseFrameJson`，維持協定 version 1，新
 
 ## 已完成與待驗證
 
-- **已完成：** APK 建置／lint、獨立 Kotlin 取樣與儲存檢查、Kotlin 合成 PNG ZIP → Windows 讀取／HTML 產生、Windows 69 項測試（本機 Node 可用時另驗證檢視頁座標與非同步切換邏輯）；Samsung App 0.2.0 手動擷取／ZIP 匯出／Windows 匯入已有真人影像證據。純本機影像流程不需要 Wi-Fi 或 ACK。
+- **已完成：** APK 建置／lint、獨立 Kotlin 取樣與儲存檢查、Kotlin 合成 PNG ZIP → Windows 讀取／HTML 產生、最新 Windows 76 項測試（含後續離線模型比較；本機 Node 可用時另驗證檢視頁座標與非同步切換邏輯）；Samsung App 0.2.0 手動擷取／ZIP 匯出／Windows 匯入已有真人影像證據。純本機影像流程不需要 Wi-Fi 或 ACK。
 - **待驗證：** GPU delegate、保存負載、按鈕停止競態／背景停止與真人點位精度。實際封包沒有 delegate 欄位，不能僅憑模型預設推定 GPU 通過；合成 JVM PNG 與 Node 的 DOM／Canvas 模型不能替代上述實機驗收。每 3 秒的照片也不能驗證即時失追策略。
 - **仍未通過：** 手機動作公尺高度；本工具不改校正／地面／倍率，也不代表 FBT、HMD 對齊、遠端同步或 Unity smoke test 通過。
+
+同一 PNG 可另交由 [離線模型比較工具](OFFLINE_MODEL_COMPARISON_2026-11-06.md) 做桌面 CPU IMAGE 研究。新推論與手機原始結果分開；不得將其回填成原手機紀錄，亦不代表手機更新後已通過。
