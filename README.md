@@ -23,6 +23,7 @@
 1. [OSC Tracker MVP 計畫](OSC_TRACKER_MVP_PLAN.md)：目前主線、完成條件與下一步。
 2. [虛擬 HMD 與 Phase 0 證據](VIRTUAL_HMD_PHASE0_PLAN.md)：`-202` 診斷、設定備份與遠端盲測紀錄。
 3. [Windows 操作](windows/README.md)／[Phase 0 探針](windows/TRACKER_PHASE0.md)：接收端、測試指令與 OSC 隔離方式。
+   [目前 FBT 不動排查](windows/FBT_DIAGNOSTIC_2026-11-06.md)：坐姿錯誤、角色映射、探針逾時與下次最短驗證。
 4. [Android 操作](android/README.md)：手機 App 建置與 LAN 傳輸。
 5. [六參數舊路線](PROJECT_PLAN.md)：自製 Avatar 的保留功能；不適用於未修改的購買 Avatar。
 
