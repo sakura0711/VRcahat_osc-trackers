@@ -23,7 +23,7 @@
 
 當次 VRChat 映射是 1＝髖、3＝左腳、4＝右腳；上次曾相反，不能假設 3／4 固定。先前校正出現坐姿模式錯誤；之後成功輪同時切站姿、重啟遊戲／SteamVR 並保持同一發送程序，不能斷言唯一原因。Headset Window 保持 2560×1440；SteamVR -202 未修復，不重做已測顯示排查。Unity smoke test 仍受 License Client IPC timeout 阻擋，不能宣稱通過。
 
-目前實作：手機即時 tracker 的低信心、失追與超時保護已完成；receiver 預設不送 OSC，明確 `--output trackers` 才輸出。六參數 Puppet 路線已移除；`tracker_replay.py --osc` 仍是原生 tracker 回放。失追重校正預設 250 ms，短暫保持預設 0；tracker 平滑、動作預測與失追後柔和過渡尚未實作。使用者觀察到失追後角色可能先站立再恢復動作，要求先分析「保留最後已校正姿勢並於恢復時平滑」的策略；需區分已實作與待驗證。
+目前實作與驗證範圍以 docs/STATUS.md 為唯一來源；即時 tracker 參數和手動重校正步驟見 windows/README.md。
 
 規則：
 - 每次修改前先在 commentary 說明。程式變更後在 windows 執行 python -B -m unittest discover -v。

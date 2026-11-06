@@ -12,6 +12,7 @@ import ipaddress
 import json
 import math
 import socket
+import sys
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -222,6 +223,20 @@ class PacketObserver(Protocol):
     def tick(self, now_ns: int) -> None: ...
 
 
+def poll_recalibration_key(bridge: TrackerBridge | None) -> None:
+    """Read R without blocking the Windows receiver; restart works everywhere."""
+    if bridge is None or sys.platform != "win32" or not sys.stdin.isatty():
+        return
+    import msvcrt
+    while msvcrt.kbhit():
+        key = msvcrt.getwch()
+        if key in ("\x00", "\xe0"):
+            if msvcrt.kbhit():
+                msvcrt.getwch()
+        elif key.lower() == "r":
+            bridge.recalibrate()
+
+
 def serve(
     sock: socket.socket,
     duration: float | None,
@@ -238,6 +253,7 @@ def serve(
     sock.settimeout(0.05)
     try:
         while duration is None or time.monotonic() - started < duration:
+            poll_recalibration_key(bridge)
             try:
                 data, address = sock.recvfrom(MAX_PACKET_BYTES + 1)
             except socket.timeout:
@@ -377,13 +393,13 @@ def main(argv: list[str] | None = None) -> int:
                 mirrored_input=args.tracker_mirror == "yes",
                 swap_left_right=args.tracker_swap_left_right == "yes",
                 forward_sign=args.tracker_forward_sign,
-                loss_timeout_ms=args.tracker_loss_ms if args.tracker_loss_ms is not None else 250.0,
+                loss_timeout_ms=args.tracker_loss_ms if args.tracker_loss_ms is not None else 350.0,
             )
             tracker_config = TrackerBridgeConfig(
                 calibration=calibration,
                 slots={"hip": args.tracker_hip_id, "left_foot": args.tracker_left_foot_id,
                        "right_foot": args.tracker_right_foot_id},
-                hold_ms=args.tracker_hold_ms if args.tracker_hold_ms is not None else 0.0,
+                hold_ms=args.tracker_hold_ms if args.tracker_hold_ms is not None else 8000.0,
                 max_jump_m=args.tracker_max_jump_m if args.tracker_max_jump_m is not None else 0.5,
                 max_yaw_jump_deg=(args.tracker_max_yaw_jump_deg if args.tracker_max_yaw_jump_deg is not None else 90.0),
             )
@@ -396,7 +412,7 @@ def main(argv: list[str] | None = None) -> int:
             console.emit("check", f"Listening on {args.bind}:{args.port} UDP (private network); waiting for phone packets.")
             bridge = TrackerBridge(tracker_config, args.osc_port, console=console) if tracker_config is not None else None
             if bridge is not None:
-                console.emit("loading", f"OSC {mode} targets 127.0.0.1:{args.osc_port}; pose output waits for calibration.")
+                console.emit("loading", f"OSC {mode} targets 127.0.0.1:{args.osc_port}; pose output waits for calibration. Press R to recalibrate on Windows.")
             serve(sock, args.duration, args.report_interval, args.allow_sender, bridge, None, console)
     except OSError as error:
         StatusConsole(args.color).emit("error", f"Receiver error: {error}", error=True)

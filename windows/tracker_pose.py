@@ -138,13 +138,15 @@ class PoseDiagnostic:
 class TrackerPoseCalibrator:
     """Returns a complete transform batch only for recent, confident poses.
 
-    Any missing required point suppresses the whole frame. A gap beyond the
-    loss timeout invalidates calibration, requiring a new neutral stance.
+    Any missing required point suppresses the whole frame. By default a gap
+    beyond the loss timeout invalidates calibration; the live bridge can retain
+    it while separately enforcing its own bounded freeze and safety checks.
     Stopping OSC on loss cannot immediately remove VRChat's last tracker pose.
     """
 
-    def __init__(self, config: TrackerCalibrationConfig) -> None:
+    def __init__(self, config: TrackerCalibrationConfig, *, retain_calibration_on_loss: bool = False) -> None:
         self.config = config
+        self.retain_calibration_on_loss = retain_calibration_on_loss
         self.reset()
 
     def reset(self) -> None:
@@ -268,7 +270,8 @@ class TrackerPoseCalibrator:
         if self.last_now_ns is not None and now_ns < self.last_now_ns:
             return
         self.last_now_ns = now_ns
-        if self.last_valid_ns is not None and now_ns - self.last_valid_ns > self.config.loss_timeout_ms * 1e6:
+        if (self.last_valid_ns is not None and now_ns - self.last_valid_ns > self.config.loss_timeout_ms * 1e6
+                and not (self.retain_calibration_on_loss and self.calibration is not None)):
             self.reset()
             # Automatic tracking loss must preserve the monotonic high-water
             # mark. Only an explicit reset (e.g. a new phone session) clears it.

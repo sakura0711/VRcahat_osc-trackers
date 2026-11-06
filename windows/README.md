@@ -51,7 +51,7 @@ python -B -m unittest discover -v
 python -B pose_receiver.py --bind <PC_IP> --allow-sender <PHONE_IP> --port 8765 --output trackers --tracker-hip-id 1 --tracker-left-foot-id 3 --tracker-right-foot-id 4 --tracker-hip-height 0.90 --tracker-mirror yes --tracker-swap-left-right yes --tracker-forward-sign -1 --tracker-yaw 0
 ~~~
 
-未完成站姿校正前零 tracker 輸出。每幀必要點低信心、無人或資料不完整時不送新姿勢；最後有效 transform 超過 `--tracker-loss-ms`（預設 250 ms，允許 0–5000 ms 的正值）須重校正。`--tracker-hold-ms` 預設 0，不重送舊姿勢；若明確設為正值，最多為 `min(loss, 250 ms)`。突變超過預設 0.5 m 或 90° 會要求重校正；可用 `--tracker-max-jump-m`／`--tracker-max-yaw-jump-deg` 調整，這些初值尚未實機調校。停止發送不保證 VRChat 立即清除最後姿勢。tracker 的平滑、速度限制及失追後過渡尚未完成。
+未完成站姿校正前不輸出 tracker。低信心、無人或資料不完整時不送新姿勢；可以重送最後一組已校正姿勢，但不刷新有效資料時間。`--tracker-loss-ms` 預設 350 ms（大於 0、至多 5000 ms）；`--tracker-hold-ms` 預設 8000 ms（0 表示不重送，正值須至少為失追門檻且不超過 8000 ms）。恢復的姿勢通過檢查後，以 300 ms 從最後送出姿勢過渡至持續更新的目標。凍結逾時後停止輸出；在 Windows 互動終端按 `R` 或重新啟動程式重新校正。新 session 或超過每角色 0.5 m／yaw 90° 的突變也要求重新校正，可用 `--tracker-max-jump-m`／`--tracker-max-yaw-jump-deg` 調整門檻。停止發送不保證 VRChat 立即清除最後姿勢。使用者與相機配置變更時應手動重校正。
 
 接收器的人類可讀輸出採用簡短英文，避免部分 Windows 主控台顯示中文亂碼。標記為 `[check]`（等待或校正受阻）、`[loading]`（校正中）、`[ready]`（開始或持續送 OSC）、`[wait]`（短暫暫停）、`[lost]`（失追須重校正）、`[error]`（傳送錯誤）。tracker 校正期間最多每秒提示一次；每個報告週期會顯示已收封包、無姿勢封包、OSC 訊息數、拒絕來源數與下一次報告間隔。校正時間只顯示「earliest」剩餘秒數，仍須連續有效影格與足夠樣本。缺少有效影格時沒有可信倒數，會列出阻擋原因與低信心點。`--report-interval 5` 可調整報告頻率。`--color auto` 預設僅在支援 ANSI 的互動終端機顯色；`--color always` 強制顯色，`--color never` 關閉。`STATUS`／`FINAL` JSON 行保持原格式，供既有工具讀取；Android MediaPipe 輸出不受影響。
 
@@ -67,7 +67,7 @@ python -B pose_receiver.py --bind <PC_IP> --allow-sender <PHONE_IP> --port 8765 
 
 站姿需雙腳著地並保持方向約 3 秒。校正以 MediaPipe hip-centred world landmarks 建立右、上、前軸，按實測髖高定尺度；腳底由 heel／foot index 估計。每幀以較低的腳底點估計地面；腳 tracker 放在 ankle，旋轉只估 yaw，pitch／roll 固定為零。單手機 world landmarks 沒有房間平移，所以髖的水平位置固定為原點；雙腳同時離地無法與蹲下可靠區分。這些限制與地面估計都待真實手機資料驗證。
 
-任一必要點低於信心門檻或無姿勢時，該幀不產生任何 tracker transform；超過 250 ms 沒有完整有效影格，校正作廢。停止產生資料不保證 VRChat 立刻清除最後一幀；接入 receiver 前須另外驗證遊戲的失追行為。測試：在 `windows` 執行 `python -B -m unittest discover -v`。
+任一必要點低於信心門檻或無姿勢時，該幀不產生任何 tracker transform；離線校正器預設超過 250 ms 沒有完整有效影格時清除校正。即時 receiver 採用上方的獨立失追策略。測試：在 `windows` 執行 `python -B -m unittest discover -v`。
 
 ### 真手機離線預覽
 

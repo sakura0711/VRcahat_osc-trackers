@@ -15,16 +15,20 @@ from tracker_pose import LANDMARK_NAMES, TrackerCalibrationConfig, TrackerPoseCa
 class TrackerBridgeConfig:
     calibration: TrackerCalibrationConfig
     slots: Mapping[str, int]
-    hold_ms: float = 0.0
+    hold_ms: float = 8000.0
     max_jump_m: float = 0.5
     max_yaw_jump_deg: float = 90.0
+    transition_ms: float = 300.0
 
     def __post_init__(self) -> None:
         timeout = self.calibration.loss_timeout_ms
         if not 0 < timeout <= 5_000:
             raise ValueError("tracker loss timeout must be in (0, 5000] ms")
-        if not math.isfinite(self.hold_ms) or not 0 <= self.hold_ms <= min(timeout, 250):
-            raise ValueError("tracker hold must be in [0, min(loss timeout, 250)] ms")
+        if (not math.isfinite(self.hold_ms) or not 0 <= self.hold_ms <= 8000
+                or 0 < self.hold_ms < timeout):
+            raise ValueError("tracker hold must be zero or between loss timeout and 8000 ms")
+        if not math.isfinite(self.transition_ms) or not 0 < self.transition_ms <= 1000:
+            raise ValueError("tracker recovery transition must be in (0, 1000] ms")
         if not math.isfinite(self.max_jump_m) or self.max_jump_m <= 0:
             raise ValueError("tracker jump limit must be finite and positive")
         if not math.isfinite(self.max_yaw_jump_deg) or not 0 < self.max_yaw_jump_deg <= 180:
@@ -42,12 +46,18 @@ class TrackerBridge:
                  output: TrackerOutput | None = None,
                  console: StatusConsole | None = None) -> None:
         self.config = config
-        self.controller = TrackerPoseCalibrator(config.calibration)
+        self.controller = TrackerPoseCalibrator(config.calibration, retain_calibration_on_loss=True)
         self.output = output if output is not None else TrackerOutput(config.slots, port)
         self.console = console if console is not None else StatusConsole()
         self.session: str | None = None
         self.last_batch: dict[str, TrackerTransform] | None = None
         self.last_valid_ns: int | None = None
+        self.last_sent: dict[str, TrackerTransform] | None = None
+        self.last_send_ns: int | None = None
+        self.interrupted = False
+        self.expired = False
+        self.transition_start_ns: int | None = None
+        self.transition_from: dict[str, TrackerTransform] | None = None
         self.last_progress_ns: int | None = None
         self.last_progress_started_ns: int | None = None
         self.state = "calibrating"
@@ -61,8 +71,10 @@ class TrackerBridge:
         if state != self.state:
             previous = self.state
             self.state = state
-            if state == "lost" and reason not in ("stopped", "new_session"):
+            if state == "lost" and reason not in ("stopped", "new_session", "hold_expired"):
                 self.console.emit("lost", f"Tracker lost ({reason}); OSC stopped. Recalibration required.")
+            elif state == "lost" and reason == "hold_expired":
+                self.console.emit("lost", "Freeze expired; OSC stopped. Press R or restart to recalibrate.")
             elif state == "calibrating" and previous == "lost":
                 self.console.emit("loading", "Tracker calibration restarted. Stand with both feet down and full body visible.")
             elif state == "tracking" and previous in ("calibrating", "lost"):
@@ -80,12 +92,13 @@ class TrackerBridge:
         if self.state == "tracking":
             return "ready", "Tracker active; OSC sends on valid new frames."
         if self.state == "paused":
-            remaining = 0.0 if controller.last_valid_ns is None else max(
-                0.0, (self.config.calibration.loss_timeout_ms * 1e6 - (now_ns - controller.last_valid_ns)) / 1e9
-            )
-            return "wait", f"OSC paused ({detail}); valid frames must resume within {remaining:.1f}s or recalibration starts."
+            return "wait", f"Tracker interrupted ({detail}); holding last calibrated pose within freeze limit."
         if self.state == "lost":
+            if self.expired:
+                return "lost", "Freeze expired; OSC stopped. Press R or restart to recalibrate."
             return "lost", "Tracker lost; OSC stopped. A continuous valid standing pose is required."
+        if self.state == "frozen":
+            return "wait", "Tracking lost; holding last calibrated pose. Press R to recalibrate."
         if controller.started_ns is not None and reason == "calibrating":
             remaining = max(0.0, controller.config.calibration_seconds - (now_ns - controller.started_ns) / 1e9)
             missing = max(0, controller.config.minimum_samples - len(controller.samples))
@@ -102,9 +115,21 @@ class TrackerBridge:
         self.controller.reset()
         self.last_batch = None
         self.last_valid_ns = None
+        self.last_sent = None
+        self.last_send_ns = None
+        self.interrupted = False
+        self.expired = False
+        self.transition_start_ns = None
+        self.transition_from = None
         self.last_progress_ns = None
         self.last_progress_started_ns = None
         self._state("lost", reason)
+
+    def recalibrate(self) -> None:
+        """Explicitly discard the old calibration and any frozen output."""
+        if not self.closed:
+            self._clear("manual_recalibration")
+            self._state("calibrating", "manual_recalibration")
 
     def _calibration_progress(self, now_ns: int) -> None:
         started_ns = self.controller.started_ns
@@ -116,11 +141,13 @@ class TrackerBridge:
             self.last_progress_ns = now_ns
             self.last_progress_started_ns = started_ns
 
-    def _send(self, transforms: Mapping[str, TrackerTransform], stats: Any) -> None:
+    def _send(self, transforms: Mapping[str, TrackerTransform], stats: Any, now_ns: int) -> None:
         if self.closed:
             return
         try:
             stats.osc_updates += self.output.send(transforms)
+            self.last_sent = dict(transforms)
+            self.last_send_ns = now_ns
         except (OSError, ValueError) as error:
             stats.osc_errors += 1
             self.console.emit("error", f"Tracker OSC send failed: {error}", error=True)
@@ -128,8 +155,10 @@ class TrackerBridge:
             self.output.close()
             self.closed = True
 
-    def _jumped(self, current: Mapping[str, TrackerTransform]) -> bool:
-        previous = self.last_batch
+    def _jumped(self, current: Mapping[str, TrackerTransform],
+                previous: Mapping[str, TrackerTransform] | None = None) -> bool:
+        if previous is None:
+            previous = self.last_batch
         if previous is None:
             return False
         for role in ROLES:
@@ -148,17 +177,25 @@ class TrackerBridge:
             self.session = packet["session"]
             self._clear("new_session")
             self._state("calibrating", "new_session")
-        was_calibrated = self.controller.calibration is not None
+        if self.expired:
+            return
+        if self.last_valid_ns is not None:
+            age = now_ns - self.last_valid_ns
+            if age < 0:
+                return
+            if age > max(self.config.hold_ms, self.config.calibration.loss_timeout_ms) * 1_000_000:
+                self.expired = True
+                self._state("lost", "hold_expired")
+                return
+            if age > self.config.calibration.loss_timeout_ms * 1_000_000:
+                self.interrupted = True
         transforms = self.controller.ingest(packet, now_ns)
-        if was_calibrated and self.controller.calibration is None:
-            self.last_batch = None
-            self.last_valid_ns = None
-            self._state("lost", "timeout")
         if not transforms:
             if self.controller.calibration is None:
                 self._state("calibrating", self.controller.diagnostic.reason)
                 self._calibration_progress(now_ns)
             else:
+                self.interrupted = True
                 self._state("paused", self.controller.diagnostic.reason)
             return
         if set(transforms) != set(ROLES):
@@ -170,29 +207,48 @@ class TrackerBridge:
         # Only a complete, confident frame updates the freshness clock.
         self.last_batch = dict(transforms)
         self.last_valid_ns = now_ns
-        self._send(transforms, stats)
+        if self.interrupted and self.last_sent is not None:
+            self.transition_from = dict(self.last_sent)
+            self.transition_start_ns = now_ns
+        self.interrupted = False
+        outgoing = transforms
+        if self.transition_start_ns is not None and self.transition_from is not None:
+            fraction = min(1.0, (now_ns - self.transition_start_ns) / (self.config.transition_ms * 1_000_000))
+            outgoing = {}
+            for role in ROLES:
+                old, new = self.transition_from[role], transforms[role]
+                position = tuple(a + fraction * (b - a) for a, b in zip(old.position, new.position))
+                rotation = tuple(a + fraction * ((b - a + 180) % 360 - 180)
+                                 for a, b in zip(old.rotation, new.rotation))
+                outgoing[role] = TrackerTransform(position, rotation)
+            if fraction >= 1.0:
+                self.transition_start_ns = None
+                self.transition_from = None
+        if self.last_sent is not None and self._jumped(outgoing, self.last_sent):
+            self._clear("output_jump")
+            return
+        self._send(outgoing, stats, now_ns)
         if not self.closed:
             self._state("tracking", "valid_frame")
 
     def tick(self, now_ns: int, stats: Any) -> None:
         if self.closed:
             return
-        was_calibrated = self.controller.calibration is not None
         self.controller.tick(now_ns)
-        if was_calibrated and self.controller.calibration is None:
-            self.last_batch = None
-            self.last_valid_ns = None
-            self._state("lost", "timeout")
-            return
-        if self.last_valid_ns is None or self.last_batch is None:
+        if self.expired or self.last_valid_ns is None or self.last_sent is None:
             return
         elapsed_ns = now_ns - self.last_valid_ns
         if elapsed_ns < 0:
             return
-        if elapsed_ns > max(self.config.hold_ms, 100.0) * 1_000_000:
-            self._state("paused", "hold_expired")
-        elif self.config.hold_ms > 0:
-            self._send(self.last_batch, stats)
+        if elapsed_ns > max(self.config.hold_ms, self.config.calibration.loss_timeout_ms) * 1_000_000:
+            self.expired = True
+            self._state("lost", "hold_expired")
+        elif elapsed_ns > self.config.calibration.loss_timeout_ms * 1_000_000:
+            self.interrupted = True
+            self._state("frozen", "timeout")
+        if (not self.expired and self.interrupted and self.config.hold_ms > 0 and elapsed_ns >= 50_000_000
+                and self.last_send_ns is not None and now_ns - self.last_send_ns >= 50_000_000):
+            self._send(self.last_sent, stats, now_ns)
 
     def close(self, stats: Any) -> None:
         self._clear("stopped")

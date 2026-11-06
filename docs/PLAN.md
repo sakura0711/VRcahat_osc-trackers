@@ -25,7 +25,7 @@
 - `windows/tracker_output.py`：Vector3 編碼與只送本機的 `TrackerOutput`；呼叫端明填髖／左腳／右腳 ID 和已校正 transform，無效批次不送出。`tracker_probe.py` 共用編碼器。
 - `windows/tracker_pose.py`：**離線**手機姿勢轉換基礎。以站姿樣本建右／上／前軸與尺度，輸出髖與雙腳位置及 yaw；校正前、低信心或缺點不產生 transform，失追超過 250 ms 清除校正。合成影格測試涵蓋站姿、抬腳、蹲下、轉身、鏡像、yaw 與失追，**不是手機或 VRChat 實測**。
 - `windows/tracker_preview.py`：不送 OSC 的手機 UDP 離線預覽，可選 `--record` 保存 landmarks 與高度診斷。
-- `pose_receiver.py --output none|trackers`：預設 `none` 不送 OSC。`trackers` 經 `tracker_bridge.py` 使用離線校正器與 `TrackerOutput`，要求明填角色 ID、髖高、鏡像、左右標籤、前向與 yaw；`T`（失追）預設 250 ms，`H`（短暫保持）獨立預設 0。
+- `pose_receiver.py --output none|trackers`：預設 `none` 不送 OSC。`trackers` 經 `tracker_bridge.py` 使用校正器與 `TrackerOutput`，要求明填角色 ID、髖高、鏡像、左右標籤、前向與 yaw；操作參數見 [Windows 指南](../windows/README.md)。
 - `tracker_replay.py --osc`：已存 ZIP 的原生 tracker 回放，與 receiver 分離。
 
 本機手機即時 OSC 與 Avatar 動作已由使用者確認；公尺精度、腳部 yaw、HMD 對齊與遠端效果的量測結果見 [docs/logs/](logs/)。
@@ -52,3 +52,5 @@
 ## 後續待量化
 
 公尺／角度精度、腳部 yaw／地面偏移、HMD 絕對對齊及失追／停止行為。可沿用 CPU IMAGE 比對設計隔離實驗，不例行重做左右方向或 Phase 0。VIDEO 不能用稀疏照片當成原始串流。獨立腳點真值、相機內參／俯仰與腳部深度仍缺少；後鏡頭與超廣角尚未實作，切換後須獨立驗證。需要更新 App 或真人配合前先語音通知。
+
+即時追蹤需評估連續濾波、速度限制與重新進入畫面的辨識可靠性；濾波不得以舊姿勢掩蓋失追，恢復時須先檢查角色映射、可信度與突變。驗收時分別觀察短暫遮擋、超時、重校正及停止後 VRChat 的實際行為，並保留本機與遠端結果的區別。
