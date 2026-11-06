@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Explicit adb test entry point; fixed private files, no intent-driven auto replay. -->
+    <instrumentation android:name="com.vrchattrack.replay.ReplaySmokeInstrumentation"
+        android:targetPackage="com.vrchattrack.replay" android:functionalTest="true" />
+</manifest>

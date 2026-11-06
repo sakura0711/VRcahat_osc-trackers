@@ -139,6 +139,8 @@ App 0.2.0 另提供手動啟用、限時的 PNG＋landmarks 本機保存與 ZIP 
 
 `offline_pose_compare.py` 可用**本機**模型對固定 PNG 做 CPU IMAGE 推論，分別比較各自校正與共用手機校正；不自動下載、不開 receiver、不送 OSC，CLI 阻止 Python socket。它是選用的研究工具，需另有 MediaPipe／OpenCV；一般測試不依賴這些套件。新推論保留獨立身份，不沿用手機傳輸／處理時間；無效樣本記為缺值。輸出應留在忽略的 `captures` 新目錄，原始檔不覆寫。完整指令與同圖 Full 較接近箱高、但仍未通過的結果見 [固定影像模型比較](OFFLINE_MODEL_COMPARISON_2026-11-06.md)。
 
+`android_replay.py` 會將獨立 Android 回放 JSON 與**完全相同的原 ZIP**核對，再做各自校正／固定手機校正的幾何分析；不開 socket、不送 OSC。核對每張圖的 ID／SHA-256／尺寸／鏡像、模型固定雜湊、mode／delegate、結果數、缺值及 VIDEO 的精確時間，拒絕 silent fallback 與不同輪混用。IMAGE 的框架時間可為 -1，只留作診斷，不冒充影片時間；配對依原圖身份。預設拒絕 synthetic，明確測試允許後仍標示 synthetic。`geometry_comparison_complete` 只有所有選定幀都可比較時才為 true；VIDEO 模擬器資料因校正失敗為 false。完整 APK、指令與待驗證範圍見 [Android 回放指南](../android/REPLAY_GUIDE.md)。
+
 需要定位高度偏差時，在預覽指令加上 `--record captures/right-step-20261106.jsonl`。目錄會自動建立；檔案以獨佔方式建立，已存在時直接失敗，不能覆寫先前量測。`captures` 已由 Git 忽略；此類檔案**包含原始姿勢座標**，不會自動加入版本控制。
 
 `tracker_recording.py` 的 JSONL 檔案包含設定、原始角色索引與下列逐封包資料：

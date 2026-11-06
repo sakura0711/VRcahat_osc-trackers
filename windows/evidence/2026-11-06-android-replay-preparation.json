@@ -1,0 +1,471 @@
+{
+  "date": "2026-11-06",
+  "base_commit": "f2a9d29fda1cf95a3eb198863c01feb90dcb23e9",
+  "scope": "standalone Android offline replay, no physical-phone changes",
+  "application_id": "com.vrchattrack.replay",
+  "application_version": "0.1.0",
+  "main_camera_app_version_unchanged": "0.2.0",
+  "tasks_vision_version": "1.0.0",
+  "source_zip_sha256": "da27054e6dab99f031cb5cc4f897bde61a180f8f599d1cf6f4978c0795645d2c",
+  "source_frames": 22,
+  "build": {
+    "apk_path": "android\\replay\\build\\outputs\\apk\\debug\\replay-debug.apk",
+    "sha256": "b197cd1401e979fec3de13e31fd4c0a83e0b9fb56980740641754e21e0ca5b4d",
+    "bytes": 64573607,
+    "model_assets": {
+      "assets/pose_landmarker_full.task": "4eaa5eb7a98365221087693fcc286334cf0858e2eb6e15b506aa4a7ecdcec4ad",
+      "assets/pose_landmarker_lite.task": "59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a"
+    },
+    "lint": {
+      "replay": {
+        "Error": 0,
+        "Warning": 14
+      },
+      "app": {
+        "Error": 0,
+        "Warning": 28
+      }
+    }
+  },
+  "compiled_apk_requested_permissions": [],
+  "apk_v2_signature_verified": true,
+  "tests": {
+    "windows_total": 84,
+    "windows_passed": 84,
+    "new_windows_tests": 8,
+    "final_run_seconds": 10.334,
+    "execution": "elevated",
+    "earlier_run_failures": [
+      "83 tests: 10 existing UDP bind errors, WinError 10013",
+      "83 tests elevated: 14 existing UDP bind errors, WinError 10013"
+    ],
+    "environment_not_claimed_fixed": true,
+    "kotlin_host_core_checks": "passed; actual 22-frame ZIP parsed; synthetic inference roundtrip only",
+    "native_calls": 88
+  },
+  "emulator": {
+    "avd": "VRChatTrack_API35",
+    "serial": "emulator-5580",
+    "api": 35,
+    "abi": "x86_64",
+    "launch_flags": [
+      "-read-only",
+      "-no-window",
+      "-no-audio",
+      "-no-snapshot-load",
+      "-no-snapshot-save",
+      "-no-boot-anim",
+      "-gpu swiftshader_indirect"
+    ],
+    "inference_delegate": "CPU",
+    "gpu_inference_tested": false,
+    "closed_after_reports_saved": true,
+    "physical_phone_touched": false
+  },
+  "modes": {
+    "image": {
+      "report_local_path": "windows/captures/android-replay-20261106/emulator-image.json",
+      "report_sha256": "e2e503abc177db79b7dd7835b37f01472951797e568961ed8b9815e203930dc2",
+      "runtime": {
+        "applicationId": "com.vrchattrack.replay",
+        "appVersion": "0.1.0",
+        "androidSdk": 35,
+        "deviceModel": "sdk_gphone64_x86_64",
+        "supportedAbis": [
+          "x86_64",
+          "arm64-v8a"
+        ],
+        "synthetic": false,
+        "internetPermission": false,
+        "cameraPermission": false,
+        "submissionPolicy": "synchronous-as-fast-as-possible",
+        "testHarness": "debug-instrumentation"
+      },
+      "first_framework_timestamp_ms": -1,
+      "cases": [
+        {
+          "name": "android_lite_cpu_image",
+          "api_status": "completed",
+          "geometry_comparison_complete": true,
+          "own_calibration": {
+            "calibration": {
+              "right": [
+                -0.9920347156458975,
+                0.003278609986891013,
+                -0.12592209365284973
+              ],
+              "up": [
+                0.0200885452831889,
+                -0.9827492993690984,
+                -0.18384848364332917
+              ],
+              "forward": [
+                0.12435261678697587,
+                0.18491366987353877,
+                -0.974855559245641
+              ],
+              "scale": 1.0309042898261698
+            },
+            "changes_raised_minus": {
+              "before": {
+                "right_y_cm": 6.001867889348215,
+                "right_pre_floor_cm": 7.726099060412807,
+                "floor_shift_cm": -1.6732155427398965,
+                "ankle_gap_cm": 5.721973836392815
+              },
+              "after": {
+                "right_y_cm": 6.582027896502078,
+                "right_pre_floor_cm": 8.764616055653335,
+                "floor_shift_cm": -2.040894622014477,
+                "ankle_gap_cm": 6.894134599324552
+              }
+            },
+            "phase_coverage": {
+              "before": {
+                "valid": 5,
+                "selected": 5
+              },
+              "raised": {
+                "valid": 6,
+                "selected": 6
+              },
+              "after": {
+                "valid": 5,
+                "selected": 5
+              }
+            },
+            "frame_reasons": {
+              "image_confidence": 2,
+              "valid": 20
+            }
+          },
+          "phone_fixed_calibration": {
+            "calibration": {
+              "right": [
+                -0.9948669594463956,
+                0.0014541850625651648,
+                -0.10118111655683536
+              ],
+              "up": [
+                0.02207462213036417,
+                -0.9726963649493152,
+                -0.23102920307223154
+              ],
+              "forward": [
+                0.09875446349247068,
+                0.2320768557185153,
+                -0.9676713744759228
+              ],
+              "scale": 1.0492527565637952
+            },
+            "changes_raised_minus": {
+              "before": {
+                "right_y_cm": 5.7961965763874055,
+                "right_pre_floor_cm": 7.543437843164881,
+                "floor_shift_cm": -1.7430480399880253,
+                "ankle_gap_cm": 5.4626628264965555
+              },
+              "after": {
+                "right_y_cm": 6.347278813660655,
+                "right_pre_floor_cm": 8.715836192162229,
+                "floor_shift_cm": -2.1465279757013036,
+                "ankle_gap_cm": 6.651763605018353
+              }
+            },
+            "phase_coverage": {
+              "before": {
+                "valid": 5,
+                "selected": 5
+              },
+              "raised": {
+                "valid": 6,
+                "selected": 6
+              },
+              "after": {
+                "valid": 5,
+                "selected": 5
+              }
+            },
+            "frame_reasons": {
+              "image_confidence": 2,
+              "valid": 20
+            }
+          }
+        },
+        {
+          "name": "android_full_cpu_image",
+          "api_status": "completed",
+          "geometry_comparison_complete": true,
+          "own_calibration": {
+            "calibration": {
+              "right": [
+                -0.9991582323414528,
+                0.035732510583271294,
+                -0.020149799793536833
+              ],
+              "up": [
+                -0.030969534890572414,
+                -0.9791599351534153,
+                -0.20071549342046635
+              ],
+              "forward": [
+                0.026901945152067158,
+                0.19992250768179168,
+                -0.9794423292206944
+              ],
+              "scale": 1.0468791488966205
+            },
+            "changes_raised_minus": {
+              "before": {
+                "right_y_cm": 16.240181454159337,
+                "right_pre_floor_cm": 14.530446944534503,
+                "floor_shift_cm": 1.6251748899642422,
+                "ankle_gap_cm": 16.523508014168094
+              },
+              "after": {
+                "right_y_cm": 16.29120184586426,
+                "right_pre_floor_cm": 14.599905324718762,
+                "floor_shift_cm": 1.6198129232794827,
+                "ankle_gap_cm": 16.25337533429872
+              }
+            },
+            "phase_coverage": {
+              "before": {
+                "valid": 5,
+                "selected": 5
+              },
+              "raised": {
+                "valid": 6,
+                "selected": 6
+              },
+              "after": {
+                "valid": 5,
+                "selected": 5
+              }
+            },
+            "frame_reasons": {
+              "image_confidence": 2,
+              "valid": 20
+            }
+          },
+          "phone_fixed_calibration": {
+            "calibration": {
+              "right": [
+                -0.9948669594463956,
+                0.0014541850625651648,
+                -0.10118111655683536
+              ],
+              "up": [
+                0.02207462213036417,
+                -0.9726963649493152,
+                -0.23102920307223154
+              ],
+              "forward": [
+                0.09875446349247068,
+                0.2320768557185153,
+                -0.9676713744759228
+              ],
+              "scale": 1.0492527565637952
+            },
+            "changes_raised_minus": {
+              "before": {
+                "right_y_cm": 14.28325505050268,
+                "right_pre_floor_cm": 13.748557830473132,
+                "floor_shift_cm": 0.40171035244161146,
+                "ankle_gap_cm": 15.569676339798754
+              },
+              "after": {
+                "right_y_cm": 14.252369816052042,
+                "right_pre_floor_cm": 13.95321321116171,
+                "floor_shift_cm": 0.19452377289528044,
+                "ankle_gap_cm": 15.568523195047103
+              }
+            },
+            "phase_coverage": {
+              "before": {
+                "valid": 5,
+                "selected": 5
+              },
+              "raised": {
+                "valid": 6,
+                "selected": 6
+              },
+              "after": {
+                "valid": 5,
+                "selected": 5
+              }
+            },
+            "frame_reasons": {
+              "image_confidence": 2,
+              "valid": 20
+            }
+          }
+        }
+      ]
+    },
+    "video": {
+      "report_local_path": "windows/captures/android-replay-20261106/emulator-video.json",
+      "report_sha256": "c0c9ede522fbfabb302b327dc18deb6d590b87c4d2a894174a7c04ad46586558",
+      "runtime": {
+        "applicationId": "com.vrchattrack.replay",
+        "appVersion": "0.1.0",
+        "androidSdk": 35,
+        "deviceModel": "sdk_gphone64_x86_64",
+        "supportedAbis": [
+          "x86_64",
+          "arm64-v8a"
+        ],
+        "synthetic": false,
+        "internetPermission": false,
+        "cameraPermission": false,
+        "submissionPolicy": "synchronous-as-fast-as-possible",
+        "testHarness": "debug-instrumentation"
+      },
+      "first_framework_timestamp_ms": 109440672,
+      "cases": [
+        {
+          "name": "android_lite_cpu_video",
+          "api_status": "completed",
+          "geometry_comparison_complete": false,
+          "own_calibration": {
+            "status": "calibration_failed",
+            "frame": 3,
+            "reason": "image_confidence"
+          },
+          "phone_fixed_calibration": {
+            "calibration": {
+              "right": [
+                -0.9948669594463956,
+                0.0014541850625651648,
+                -0.10118111655683536
+              ],
+              "up": [
+                0.02207462213036417,
+                -0.9726963649493152,
+                -0.23102920307223154
+              ],
+              "forward": [
+                0.09875446349247068,
+                0.2320768557185153,
+                -0.9676713744759228
+              ],
+              "scale": 1.0492527565637952
+            },
+            "changes_raised_minus": {
+              "before": {
+                "right_y_cm": null,
+                "right_pre_floor_cm": null,
+                "floor_shift_cm": null,
+                "ankle_gap_cm": null
+              },
+              "after": {
+                "right_y_cm": 6.32595741435291,
+                "right_pre_floor_cm": 6.722938863779234,
+                "floor_shift_cm": -0.6381943971052948,
+                "ankle_gap_cm": 6.187785229841115
+              }
+            },
+            "phase_coverage": {
+              "before": {
+                "valid": 0,
+                "selected": 5
+              },
+              "raised": {
+                "valid": 1,
+                "selected": 6
+              },
+              "after": {
+                "valid": 5,
+                "selected": 5
+              }
+            },
+            "frame_reasons": {
+              "image_confidence": 13,
+              "no_person": 1,
+              "valid": 8
+            }
+          }
+        },
+        {
+          "name": "android_full_cpu_video",
+          "api_status": "completed",
+          "geometry_comparison_complete": false,
+          "own_calibration": {
+            "status": "calibration_failed",
+            "frame": 3,
+            "reason": "image_confidence"
+          },
+          "phone_fixed_calibration": {
+            "calibration": {
+              "right": [
+                -0.9948669594463956,
+                0.0014541850625651648,
+                -0.10118111655683536
+              ],
+              "up": [
+                0.02207462213036417,
+                -0.9726963649493152,
+                -0.23102920307223154
+              ],
+              "forward": [
+                0.09875446349247068,
+                0.2320768557185153,
+                -0.9676713744759228
+              ],
+              "scale": 1.0492527565637952
+            },
+            "changes_raised_minus": {
+              "before": {
+                "right_y_cm": null,
+                "right_pre_floor_cm": null,
+                "floor_shift_cm": null,
+                "ankle_gap_cm": null
+              },
+              "after": {
+                "right_y_cm": 9.650367338401932,
+                "right_pre_floor_cm": 10.29944833235426,
+                "floor_shift_cm": -0.633473290577669,
+                "ankle_gap_cm": 10.714998155309852
+              }
+            },
+            "phase_coverage": {
+              "before": {
+                "valid": 0,
+                "selected": 5
+              },
+              "raised": {
+                "valid": 3,
+                "selected": 6
+              },
+              "after": {
+                "valid": 5,
+                "selected": 5
+              }
+            },
+            "frame_reasons": {
+              "image_confidence": 11,
+              "no_person": 1,
+              "valid": 10
+            }
+          }
+        }
+      ]
+    }
+  },
+  "fixes_verified": [
+    "Truncated stdin ZIP transfer was rejected; adb push + run-as cp then exact source/private SHA256 checks succeeded.",
+    "Android IMAGE returns frameworkTimestampMs=-1; it is diagnostic only, taskResultTimestampMs=null, pairing uses source frame ID and PNG SHA256.",
+    "VIDEO input and task result timestamps must equal the original source-frame timestamp.",
+    "GPU failure does not silently become a CPU result; verified by injected host error test."
+  ],
+  "limitations": [
+    "Emulator native inference is genuine, but is not Samsung arm64/GPU or live camera acceptance.",
+    "Source contains stills about every 3 seconds, not original continuous frames. VIDEO neutral calibration failed and partial values cannot be compared as valid height.",
+    "Document picker/import/export UI and lifecycle behavior on a physical device remain unverified.",
+    "Full IMAGE remains below 20 cm; no scale/FBT/IK/HMD/remote acceptance.",
+    "No phone/VRChat OSC; old unit encoding tests use isolated loopback dynamic ports.",
+    "No source photos, raw landmarks, APK or model binaries committed."
+  ],
+  "native_test_apk_sha256": "6e155172d7d7ab507004a2f1f0e15b180e2c2717fbce045e0bb6747204e36048",
+  "final_change_validation": "After the 88-call native run, added empty-directory ZIP guard only; rebuilt/linted final APK and passed JVM rejection tests. Native inference adapter/models unchanged, 88 calls not repeated."
+}

@@ -8,13 +8,23 @@
 
 最終完整 69 項通過前，曾有一次重跑在 13 項既有 UDP 測試的 `bind(("127.0.0.1", 0))` 遇到 `WinError 10013`；同一指令提高執行權限重跑後通過。先前一般權限的 67／68 項也曾通過，因此不能宣稱已證明是權限根因或已修復環境問題。沒有變更防火牆或系統埠設定。
 
-`python -B -m unittest discover -v`：2026-11-06 最新 **76 項通過**。新增離線模型比較的 7 項檢查；最終普通權限執行成功，沒有變更防火牆，也不能宣稱舊的間歇埠問題已修復。涵蓋接收／ACK、六參數模式、OSC 編碼、tracker 角色 ID、離線座標校正、品質統計、極端數值、時間順序、32 組相機座標變換與測試工具提前停止。鏡像模型標籤反轉測試確認明確左右對調後符合真人角色及 yaw，且不修改收到的封包。高度診斷測試涵蓋傾斜相機與尺度下的 20 cm 合成抬腳、共用地面偏移與無效／失追後清除舊診斷。
+`python -B -m unittest discover -v`：2026-11-06 最新 **84 項通過**。在先前 76 項之外，新增 Android 回放讀取的 8 項檢查。此次最終提高權限執行成功；此前兩輪 83 項分別有 10／14 項既有 UDP bind 測試遇到 WinError 10013，提高權限也曾失敗。沒有變更防火牆或系統埠，不能宣稱環境已修復。涵蓋接收／ACK、六參數模式、OSC 編碼、tracker 角色 ID、離線座標校正、品質統計、極端數值、時間順序、32 組相機座標變換與測試工具提前停止。鏡像模型標籤反轉測試確認明確左右對調後符合真人角色及 yaw，且不修改收到的封包。高度診斷測試涵蓋傾斜相機與尺度下的 20 cm 合成抬腳、共用地面偏移與無效／失追後清除舊診斷。
 
 2026-11-06 新增同一封包的 2D／3D 記錄與離線重播測試：明確左右對調／鏡像下，逐筆核對原始來源、輸出與時間戳；顯示節流、低信心、失追與新工作階段不混用舊診斷。實際 UDP 整合測試確認錯誤格式與舊序號不寫入檔案，後續 ACK 及記錄正常、`osc_updates=0`。另驗證檔案不可覆寫、預設不建立 recorder、CLI 不建立 OSC 輸出，以及重播不開 socket、修改既存輸出後可偵測不一致。這些只證明記錄及重現機制，不代表實機公尺精度已改善。
 
 本輪原有 closed UDP peer 整合測試兩次未收到 Windows ICMP 重設通知；通知是否回報受 OS／防火牆影響。整合測試仍確認後續真 UDP 封包與 ACK 可用，另新增可控的 `ConnectionResetError` 測試，確保重設分支被計數且接收不中斷。沒有修改 receiver 的重設處理程式。這些是本機自動測試；VRChat 的 OSC FBT 遠端盲測另見 [Phase 0 證據](../VIRTUAL_HMD_PHASE0_PLAN.md)。
 
 收尾重跑另曾遇到多個 `bind(("127.0.0.1", 0))` 被 Windows 回報 `WinError 10013`，提高執行權限也曾發生；同時固定本機埠仍可綁定。之後單獨 UDP 測試、匯入全部測試後綁定與最後一次完整 53 項均通過。沒有變更防火牆、系統埠範圍或排除清單；這個環境間歇狀況仍待查，不能聲稱已修復。
+
+## Android 獨立離線回放（2026-11-06）
+
+新增 `android/replay`，套件 `com.vrchattrack.replay`，不覆蓋相機 App 0.2.0。最終 APK 無任何 uses-permission；build／lint、APK v2 簽章及兩模型雜湊核對通過。Kotlin 主機核心可讀取同批 22 張真實 PNG，測試 ZIP 安全／大小／PNG CRC／身份、模型／delegate、取消／舊票據、無 silent fallback 與 IMAGE 時間 sentinel；主機的假推論有 synthetic 標籤。
+
+另在唯讀無視窗 API 35 x86_64 AVD，使用真實 Android MediaPipe 1.0.0 CPU 做 Lite／Full × IMAGE／VIDEO，**88 次 API 推論完成**，兩份原始報告與私有輸入副本皆核對 SHA-256。IMAGE 選定 16 張全有效：Lite 上升 6.00／6.58 cm、Full 16.24／16.29 cm；共用手機校正的 Full 為 14.28／14.25 cm，與桌面 IMAGE 接近。**VIDEO 兩模型前站姿均 0／5 有效、獨立校正失敗**，不當作有效高度比較。Windows 以 `geometry_comparison_complete=false` 標示，不補值或忽略失敗。
+
+本次找到並修正回放器自身的 IMAGE 時間假設：原生 IMAGE 的 framework timestamp 為 -1，不應作有效來源時間；改記診斷值，配對使用原圖 ID／SHA，VIDEO 仍要求 input/result/source 時間完全一致。另一次標準輸入複製 ZIP 截斷已被拒絕，改用 adb push／run-as cp 並逐段驗證後才推論。這些修正未更動手機、姿勢算法、模型或失追策略。
+
+Windows 8 項新增檢查含同圖／錯輪拒絕、結果缺失／錯誤、模式／模型／delegate 身份、時間／權限標記、synthetic 拒絕、原檔／輸出不覆寫與完整性旗標。JSON 交換／分析不開 socket；既有套件 OSC 編碼送收只在本機動態隔離埠，未向 VRChat 發送手機資料。模擬器已關閉，手機 GPU、檔案選取與實體機生命週期未驗證。詳見 [操作及限制](../android/REPLAY_GUIDE.md) 與 [衍生 evidence](evidence/2026-11-06-android-replay-preparation.json)。
 
 ## 同圖桌面 CPU 模型比較（2026-11-06）
 

@@ -16,4 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "VRChatTrackMvp"
 include(":app")
+include(":replay")
 

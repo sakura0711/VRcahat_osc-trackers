@@ -4,7 +4,7 @@
 
 ## 已固定的基線
 
-2026-11-06 新增 **App 0.2.0** 的選用同影格影像／landmarks 保存與 ZIP 匯出，預設關閉。自動檢查已完成，手機擷取／匯出仍待實測；需要更新 App 或真人配合前先語音通知。[完整操作](../windows/IMAGE_PAIR_GUIDE.md)。
+2026-11-06 新增 **App 0.2.0** 的選用同影格影像／landmarks 保存與 ZIP 匯出，預設關閉；真手機擷取／匯出已確認。[完整操作](../windows/IMAGE_PAIR_GUIDE.md)。後續另備妥 **Pose Offline Replay 0.1.0**（`replay` 模組），不覆蓋本相機 App；已用同批 PNG 在唯讀 Android 模擬器完成 CPU IMAGE／VIDEO 的 88 次原生推論，IMAGE 比較完整、VIDEO 校正失敗，不當作有效高度比較。[離線回放操作與限制](REPLAY_GUIDE.md)。手機未更新；需要安裝或真人配合前先語音通知。
 
 - AGP 8.11.1
 - Gradle 8.13
