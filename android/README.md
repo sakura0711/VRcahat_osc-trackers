@@ -4,9 +4,11 @@
 
 ## 已固定的基線
 
+2026-11-06 新增 **App 0.2.0** 的選用同影格影像／landmarks 保存與 ZIP 匯出，預設關閉。自動檢查已完成，手機擷取／匯出仍待實測；需要更新 App 或真人配合前先語音通知。[完整操作](../windows/IMAGE_PAIR_GUIDE.md)。
+
 - AGP 8.11.1
 - Gradle 8.13
-- Java 編譯目標 17；本次實機 build 使用 JBR 21
+- Java 編譯目標 17；0.2.0 建置使用既有 Microsoft JDK 17。當前 Android Studio 的 JBR 25 與此 Gradle／Kotlin 組合不相容；沒有因此升級專案工具鏈。
 - compileSdk / targetSdk 36
 - minSdk 24
 - CameraX 1.6.2
@@ -21,7 +23,7 @@
 
 ## 取景與底部資訊面板
 
-底部資訊面板是疊在相機預覽上的 UI，沒有遮掉送入 MediaPipe 的影像；辨識使用旋轉／鏡像後的完整 `ImageAnalysis` Bitmap。被 UI 蓋住但仍在原始相機影格內的腳部仍可辨識並傳送 landmarks，不會儲存照片或影片。預覽採 `FILL_CENTER`，畫面邊緣可能被顯示裁切，不能只靠可見預覽判斷分析影格的精確邊界。
+底部資訊面板是疊在相機預覽上的 UI，沒有遮掉送入 MediaPipe 的影像；辨識使用旋轉／鏡像後的完整 `ImageAnalysis` Bitmap。被 UI 蓋住但仍在原始相機影格內的腳部仍可辨識並傳送 landmarks。預設不儲存影像；0.2.0 只有手動啟用影像對照才保存限量 PNG，不錄影片。預覽採 `FILL_CENTER`，畫面邊緣可能被顯示裁切，不能只靠可見預覽判斷分析影格的精確邊界；對照 PNG 不含預覽裁切或 UI 面板。
 
 目前 App 固定前鏡頭，尚無後鏡頭／超廣角選擇。三星 A53 官方規格表列前鏡頭及後主鏡頭視角約 81°、後超廣角約 123°；單純切換後主鏡頭不保證更廣，第三方 App 實際可取得的鏡頭與分析視角仍待裝置驗證。[三星官方規格](https://image-us.samsung.com/SamsungUS/samsungbusiness/pdf/spec-sheets/Galaxy_A53_5G_SpecSheet.pdf)。
 
@@ -41,6 +43,23 @@
 先在 Windows 啟動接收端；在手機輸入電腦的私人 IPv4 和 UDP 埠，按「開始傳送」。顯示「收到 ACK」後可查看手機量測的 RTT p50／p95。畫面也列出已送、已回覆、傳送前覆蓋或捨棄的舊影格、逾時與封包大小；若辨識回呼的時間戳重複或倒退，會捨棄該影格，避免較舊結果覆寫新姿勢。離開 App 前景會停止傳送。
 
 只傳 33 個 normalized／world landmarks 和計時資料，不傳相機影像。Android INTERNET 與 ACCESS_NETWORK_STATE 為一般權限；此專案 target SDK 36。接收端命令、協定與量測限制見 windows/README.md。
+
+0.2.0 增加影格識別、影像尺寸、已套用旋轉／鏡像及模型名稱，供匯出圖片與同次 UDP 姿勢精確核對；仍不傳圖片、不自動啟動 LAN。影像對照可完全在手機本機使用，每 3 秒取樣一張、最多 40 張／120 秒，停止或失去前景後不發布舊批次。使用者選擇匯出 ZIP 後，才由系統檔案選單指定目的地。
+
+## 同影格工具的自動檢查
+
+使用本機既有 JDK 17；Gradle 使用既有快取，不安裝或啟動手機 App：
+
+~~~powershell
+$env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-17.0.15.6-hotspot'
+.\gradlew.bat --offline --no-daemon :app:assembleDebug :app:lintDebug
+$captureKotlinc = 'E:\AndroidStudio\plugins\Kotlin\kotlinc\bin\kotlinc.bat'
+$captureSource = 'app\src\main\java\com\vrchattrack\singlephone'
+& $captureKotlinc "$captureSource\DiagnosticCaptureGate.kt" "$captureSource\DiagnosticPairStore.kt" tests\DiagnosticCaptureCheck.kt -include-runtime -d app\build\diagnostic-capture-check.jar
+& "$env:JAVA_HOME\bin\java.exe" '-Djava.awt.headless=true' -jar app\build\diagnostic-capture-check.jar app\build\diagnostic-pair-fixture
+~~~
+
+Kotlin 檢查涵蓋明確啟用、取樣間隔／上限、單張自有影像、停止／過期／重新開始時的舊票據、雜湊、原子配對、寫入失敗清理、超量影像、拒絕覆寫與 ZIP 匯出。最後參數可產生合成 PNG 配對 ZIP，供 Windows 檢視工具核對；合成 PNG 不是 Android Bitmap 或真手機回呼驗收。
 
 ## 10 分鐘結果記錄
 

@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.util.Log
 import androidx.camera.core.ImageProxy
 import com.google.mediapipe.framework.image.BitmapImageBuilder
+import com.google.mediapipe.framework.image.MPImage
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.core.Delegate
 import com.google.mediapipe.tasks.vision.core.RunningMode
@@ -95,6 +96,9 @@ data class PoseFrame(
     val landmarks: List<LandmarkSample>,
     val worldLandmarks: List<WorldLandmarkSample>,
     val coreJointsUsable: Boolean,
+    val inputRotationDegrees: Int? = null,
+    val mirroredInput: Boolean? = null,
+    val modelAsset: String = "pose_landmarker_lite.task",
 ) {
     val poseDetected: Boolean
         get() = landmarks.size == LANDMARK_COUNT
@@ -127,7 +131,8 @@ class PoseLandmarkerEngine(
     private val listener: Listener,
     val delegate: Delegate,
 ) : Closeable {
-    private data class PendingTiming(val startNs: Long, val submitNs: Long, val cameraTimestampNs: Long)
+    private data class PendingTiming(val startNs: Long, val submitNs: Long, val cameraTimestampNs: Long,
+                                     val rotationDegrees: Int, val mirrored: Boolean)
 
     private val isClosed = AtomicBoolean(false)
     private val poseLandmarker: PoseLandmarker
@@ -202,7 +207,8 @@ class PoseLandmarkerEngine(
                 )
             val image = BitmapImageBuilder(rotatedBitmap).build()
             val submitNs = SystemClock.elapsedRealtimeNanos()
-            pendingTimings[captureTimestampMs] = PendingTiming(startNs, submitNs, cameraTimestampNs)
+            pendingTimings[captureTimestampMs] = PendingTiming(startNs, submitNs, cameraTimestampNs,
+                                                             rotationDegrees, isFrontCamera)
             submittedTimestampMs = captureTimestampMs
             poseLandmarker.detectAsync(image, captureTimestampMs)
 
@@ -236,6 +242,7 @@ class PoseLandmarkerEngine(
     }
 
     private fun onLiveStreamResult(result: PoseLandmarkerResult, input: com.google.mediapipe.framework.image.MPImage) {
+        if (isClosed.get()) return
         val callbackNs = SystemClock.elapsedRealtimeNanos()
         val pending = pendingTimings.remove(result.timestampMs())
         val normalized =
@@ -282,6 +289,9 @@ class PoseLandmarkerEngine(
                 landmarks = normalized,
                 worldLandmarks = world,
                 coreJointsUsable = coreUsable,
+                inputRotationDegrees = pending?.rotationDegrees,
+                mirroredInput = pending?.mirrored,
+                modelAsset = MODEL_NAME,
             )
         poseRateMeter.record(SystemClock.elapsedRealtimeNanos(), frame.poseDetected)?.let { window ->
             val durationMs = window.durationNs / NANOS_PER_MS
@@ -297,6 +307,7 @@ class PoseLandmarkerEngine(
         }
         emitDebugLog(frame)
         listener.onPoseFrame(frame)
+        listener.onDiagnosticFrame(frame, input)
     }
 
     private fun onLiveStreamError(error: RuntimeException) {
@@ -340,6 +351,8 @@ class PoseLandmarkerEngine(
 
     interface Listener {
         fun onPoseFrame(frame: PoseFrame)
+
+        fun onDiagnosticFrame(frame: PoseFrame, input: MPImage) {}
 
         fun onError(message: String)
     }

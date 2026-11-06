@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">VRChat Track MVP</string>
+    <string name="capture_notice">影像對照預設關閉。手動開始後，每 3 秒保存一張分析影像與座標，僅存手機本機，最多 40 張；離開 App 即停止。</string>
+    <string name="capture_start">開始影像對照（120 秒）</string>
+    <string name="capture_export">匯出最近一次影像對照 ZIP</string>
     <string name="camera_starting">正在啟動前鏡頭…</string>
     <string name="camera_ready">前鏡頭與 MediaPipe 已啟動，等待姿勢資料…</string>
     <string name="camera_permission_required">需要相機權限才能進行姿勢辨識。</string>

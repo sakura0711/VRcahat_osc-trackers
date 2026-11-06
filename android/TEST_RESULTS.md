@@ -1,5 +1,15 @@
 # 第 1 階段驗證結果
 
+## 2026-11-06：選用的同影格影像對照工具（App 0.2.0）
+
+- `app:assembleDebug`、`app:lintDebug`：通過；lint **0 errors、28 warnings**。使用本機 Microsoft JDK 17；先前以目前 Android Studio JBR 25.0.4 啟動時，既有 Gradle／Kotlin 工具鏈在配置階段失敗，未變更專案版本來迴避。
+- 獨立 `DiagnosticCaptureCheck.kt`：通過。涵蓋預設關閉、取樣間隔／張數／期限、單張影像所有權、停止及舊批次不可發布、時鐘倒退、原子成對檔案、PNG SHA-256、失敗／超量寫入清理、不可覆寫、空的新批次不遮蔽舊的完整批次，以及 ZIP 匯出。
+- 使用正式 `DiagnosticPairStore` 產生 JVM 合成 PNG／landmarks ZIP，Windows `inspect_pose_pairs.py` 成功驗證並產生檢視頁。這驗證儲存／交換格式，沒有驗證真手機 Bitmap 編碼、GPU 回呼或觸控匯出。
+- 產物：package `com.vrchattrack.singlephone`、versionCode **2**、versionName **0.2.0**。APK SHA-256：`2a7f37489d0062783cbd3fa74d7fe5acbdcd0fa64ba72860c41f4efdad63f8f9`。目前建置完成，手機更新與實機影像擷取仍待確認。
+- 本機配對與 UDP 共用來源序列化，新增影格／方向／模型資訊，保持協定 version 1 與座標四位小數。影像對照預設關閉，不會因啟動 App、開始 LAN 或重啟而自動啟用；照片不透過 UDP 傳送。保存於 App 私有 no-backup 目錄，使用者明確選擇才匯出 ZIP。
+
+操作與限制見 [同影格工具](../windows/IMAGE_PAIR_GUIDE.md)。Windows 最新 **69 項自動測試通過**；新檢視工具不開 socket／不送 OSC。手機端實際影像與點位對齊、保存負載、背景停止與匯出仍待驗證；不得據此宣稱高度精度、手機 FBT 或 Unity smoke test 已通過。
+
 驗證日期：2026-11-03  
 目標：確認 Android 原生基線的型別、虛擬裝置啟動與 CAMERA 權限流程。
 

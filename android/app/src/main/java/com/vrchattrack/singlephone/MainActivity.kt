@@ -13,6 +13,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
@@ -21,6 +22,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.google.mediapipe.framework.image.MPImage
 import com.google.mediapipe.tasks.core.Delegate
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -55,6 +57,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var retryButton: Button
     private lateinit var switchButton: Button
     private lateinit var benchmarkButton: Button
+    private lateinit var captureButton: Button
+    private lateinit var exportCaptureButton: Button
+    private lateinit var captureStatusView: TextView
+    private lateinit var diagnosticCapture: DiagnosticCapture
     private lateinit var analysisExecutor: ExecutorService
     private val mainHandler = Handler(Looper.getMainLooper())
     private var cameraProvider: ProcessCameraProvider? = null
@@ -70,6 +76,41 @@ class MainActivity : AppCompatActivity() {
     private var resultWindowStartedAtMs = 0L
     private var resultsInWindow = 0
     private var resultFps = 0f
+    private var exportInProgress = false
+
+    private val exportCaptureLauncher = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        if (uri != null) {
+            try {
+                val output = requireNotNull(contentResolver.openOutputStream(uri, "w"))
+                exportInProgress = true
+                diagnosticCapture.export(output) { error ->
+                    runOnUiThread {
+                        exportInProgress = false
+                        if (!isDestroyed) {
+                            captureStatusView.text = error ?: "已匯出影像與座標 ZIP"
+                            Toast.makeText(this@MainActivity, captureStatusView.text, Toast.LENGTH_LONG).show()
+                            refreshCaptureControls()
+                        }
+                    }
+                }
+            } catch (problem: Exception) {
+                exportInProgress = false
+                captureStatusView.text = "無法匯出：${problem.javaClass.simpleName}"
+            }
+        }
+    }
+
+    private val captureStatusTick = object : Runnable {
+        override fun run() {
+            if (!isDestroyed && ::diagnosticCapture.isInitialized) {
+                if (!exportInProgress) captureStatusView.text = diagnosticCapture.status()
+                refreshCaptureControls()
+                mainHandler.postDelayed(this, 1000)
+            }
+        }
+    }
 
     private val cameraPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -102,6 +143,23 @@ class MainActivity : AppCompatActivity() {
         retryButton = findViewById(R.id.retry_button)
         switchButton = findViewById(R.id.switch_delegate_button)
         benchmarkButton = findViewById(R.id.benchmark_button)
+        captureButton = findViewById(R.id.capture_button)
+        exportCaptureButton = findViewById(R.id.export_capture_button)
+        captureStatusView = findViewById(R.id.capture_status)
+        diagnosticCapture = DiagnosticCapture(applicationContext)
+        captureButton.setOnClickListener {
+            try {
+                if (diagnosticCapture.isActive()) diagnosticCapture.stop() else diagnosticCapture.start()
+            } catch (problem: Exception) {
+                captureStatusView.text = "無法開始影像對照：${problem.javaClass.simpleName}"
+            }
+            refreshCaptureControls()
+        }
+        exportCaptureButton.setOnClickListener {
+            diagnosticCapture.stop()
+            exportCaptureLauncher.launch("pose-image-pairs.zip")
+        }
+        mainHandler.post(captureStatusTick)
 
         retryButton.setOnClickListener { checkCameraPermissionAndStart() }
         switchButton.setOnClickListener {
@@ -151,6 +209,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startPosePipeline() {
+        diagnosticCapture.stop()
         val generation = ++pipelineGeneration
         val requested = requestedDelegate
         pipelineStarting = true
@@ -165,6 +224,10 @@ class MainActivity : AppCompatActivity() {
         cameraProvider?.unbindAll()
 
         val listener = object : PoseLandmarkerEngine.Listener {
+            override fun onDiagnosticFrame(frame: PoseFrame, input: MPImage) {
+                if (generation == pipelineGeneration) diagnosticCapture.offer(frame, input)
+            }
+
             override fun onPoseFrame(frame: PoseFrame) {
                 if (generation == pipelineGeneration) lanSender?.offer(frame)
                 runOnUiThread {
@@ -473,6 +536,14 @@ class MainActivity : AppCompatActivity() {
         retryButton.isEnabled = enabled
         switchButton.isEnabled = enabled
         benchmarkButton.isEnabled = enabled
+        refreshCaptureControls()
+    }
+
+    private fun refreshCaptureControls() {
+        if (!::diagnosticCapture.isInitialized) return
+        captureButton.text = if (diagnosticCapture.isActive()) "停止影像對照" else "開始影像對照（120 秒）"
+        captureButton.isEnabled = !pipelineStarting && benchmark == null && !exportInProgress
+        exportCaptureButton.isEnabled = diagnosticCapture.hasExport() && !diagnosticCapture.isActive() && !exportInProgress
     }
 
     private fun startLanSender() {
@@ -536,12 +607,19 @@ class MainActivity : AppCompatActivity() {
         networkStatusView.text = getString(R.string.network_stopped)
     }
 
+    override fun onPause() {
+        diagnosticCapture.stop()
+        super.onPause()
+    }
+
     override fun onStop() {
+        diagnosticCapture.stop()
         stopLanSender()
         super.onStop()
     }
 
     override fun onDestroy() {
+        diagnosticCapture.close()
         pipelineGeneration += 1
         mainHandler.removeCallbacksAndMessages(null)
         cameraProvider?.unbindAll()

@@ -15,11 +15,14 @@
         android:layout_height="match_parent"
         android:importantForAccessibility="no" />
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_gravity="bottom"
+        android:background="#B3000000">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="#B3000000"
         android:orientation="vertical"
         android:padding="16dp">
 
@@ -116,7 +119,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/benchmark_start" />
+
+        <TextView
+            android:id="@+id/capture_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/capture_notice"
+            android:textColor="@android:color/white"
+            android:textSize="14sp" />
+        <Button
+            android:id="@+id/capture_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/capture_start" />
+        <Button
+            android:id="@+id/export_capture_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="@string/capture_export" />
     </LinearLayout>
+    </ScrollView>
 
 </FrameLayout>
 

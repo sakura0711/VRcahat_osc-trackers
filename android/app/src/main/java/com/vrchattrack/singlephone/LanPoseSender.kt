@@ -233,44 +233,8 @@ class LanPoseSender(
         )
     }
 
-    private fun buildPosePacket(frame: PoseFrame, seq: Long): JSONObject {
-        val points = JSONArray()
-        val worldPoints = JSONArray()
-        if (frame.poseDetected) {
-            require(frame.landmarks.size == PoseFrame.LANDMARK_COUNT &&
-                frame.worldLandmarks.size == PoseFrame.LANDMARK_COUNT) { "姿勢資料不完整" }
-            frame.landmarks.forEach { point ->
-                points.put(pointJson(point.x, point.y, point.z, point.visibility, point.presence))
-            }
-            frame.worldLandmarks.forEach { point ->
-                worldPoints.put(pointJson(point.x, point.y, point.z, point.visibility, point.presence))
-            }
-        }
-        return JSONObject()
-            .put("version", VERSION)
-            .put("session", session)
-            .put("seq", seq)
-            .put("captureMonotonicNs", frame.cameraTimestampNs ?: 0L)
-            .put("captureTimestampSource", "camera-device-unspecified")
-            .put("analysisStartMonotonicNs", frame.analysisStartMonotonicNs ?: 0L)
-            .put("inferenceMs", frame.timing?.totalMs ?: frame.inferenceMs.toDouble())
-            .put("personDetected", frame.poseDetected)
-            .put("landmarks", points)
-            .put("worldLandmarks", worldPoints)
-    }
-
-    private fun pointJson(x: Float, y: Float, z: Float, visibility: Float?, presence: Float?): JSONObject =
-        JSONObject()
-            .put("x", rounded(x))
-            .put("y", rounded(y))
-            .put("z", rounded(z))
-            .put("visibility", visibility?.let(::rounded) ?: JSONObject.NULL)
-            .put("presence", presence?.let(::rounded) ?: JSONObject.NULL)
-
-    private fun rounded(value: Float): Double {
-        require(value.isFinite()) { "姿勢資料包含無效數值" }
-        return round(value.toDouble() * COORDINATE_SCALE) / COORDINATE_SCALE
-    }
+    private fun buildPosePacket(frame: PoseFrame, seq: Long): JSONObject =
+        poseFrameJson(frame).put("session", session).put("seq", seq)
 
     override fun close() {
         running.set(false)
