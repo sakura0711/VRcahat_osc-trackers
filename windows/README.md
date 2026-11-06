@@ -90,6 +90,10 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 目前 `pose_receiver.py` **未使用** `TrackerOutput`，仍只在 `--osc` 下輸出六個 Avatar 參數；請勿把這個元件當作手機 FBT 完成。
 
+### 已存 ZIP 的三姿勢回放
+
+`tracker_replay.py` 可把已校正的原始手機 landmarks 準備成「站姿 → 右腳上箱 → 放回」三個固定姿勢，預設不建立 socket。已有 95 項 Windows 測試與真實 ZIP 的不送 OSC 檢查；尚未驗證本次 VRChat 效果。探索測試須先語音通知、等待使用者就位，再明確啟用 `--osc`、核對 ZIP 雜湊與三個角色 ID；啟用後先維持站姿，收到 `play` 才跑一次有限序列。手機 App 無需更動。完整指令、停止行為與限制見 [回放指南](TRACKER_REPLAY_GUIDE.md)。這不是 live receiver 的 tracker 輸出模式。
+
 ## 手機 tracker 座標校正基礎（離線）
 
 `tracker_pose.py` 接受已驗證格式的 MediaPipe 封包，但只回傳三個 `TrackerTransform`，**不送 OSC**。建立 `TrackerCalibrationConfig` 時，必須提供實測站姿髖高（地面至左右髖中點，公尺）、初始 yaw、是否鏡像，以及前向符號。Android 目前把前鏡頭影格鏡像後送進 MediaPipe，因此 `mirrored_input=True` 是程式路徑的設定；仍須以真實影格確認左右與前後方向。前向符號若與站姿腳尖方向不符，校正會失敗。
