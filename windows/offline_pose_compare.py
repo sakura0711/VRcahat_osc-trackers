@@ -22,7 +22,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from inspect_pose_pairs import _point_arrays, read_pairs
-from pose_control import point_confident
+from tracker_utils import point_confident
 from tracker_pose import TrackerCalibrationConfig, TrackerPoseCalibrator
 
 METRICS = ("right_y_cm", "left_y_cm", "right_pre_floor_cm", "floor_shift_cm", "ankle_gap_cm",

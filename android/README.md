@@ -119,8 +119,8 @@ $src = 'app\src\main\java\com\vrchattrack\singlephone'
 
 ## 還未加入
 
-- Android 端正式校正、角度轉換與濾波；目前由 Windows 實驗性處理
+- Android 端正式 tracker 校正與濾波；目前由 Windows 的 tracker 流程處理校正，平滑尚未實作
 - 手機經 Windows receiver 驅動 VRChat Avatar 的遠端與長時間驗證；本機動作已初驗
 
-這些項目會依 PROJECT_PLAN.md 的第 2 至第 5 階段依序加入。
+後續以 [原生 OSC Tracker MVP 計畫](../OSC_TRACKER_MVP_PLAN.md) 與 [即時 tracker 安全計畫](../windows/LIVE_TRACKER_SAFETY_PLAN.md) 為準。
 

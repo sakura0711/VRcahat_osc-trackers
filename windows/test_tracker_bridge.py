@@ -247,7 +247,10 @@ class TrackerBridgeTests(unittest.TestCase):
 class TrackerCliTests(unittest.TestCase):
     def test_invalid_output_choices_fail_before_socket_creation(self):
         bad = (
-            ["--osc", "--output", "trackers"],
+            ["--osc"],
+            ["--output", "parameters"],
+            ["--smoothing-ms", "35"],
+            ["--hold-ms", "250"],
             ["--tracker-loss-ms", "500"],
             ["--output", "trackers"],
             TRACKER_ARGS + ["--tracker-loss-ms", "5001"],
@@ -261,7 +264,7 @@ class TrackerCliTests(unittest.TestCase):
                         main(args)
             socket_factory.assert_not_called()
 
-    def test_default_parameters_and_tracker_modes(self):
+    def test_default_and_tracker_modes(self):
         class FakeSocket:
             def __enter__(self):
                 return self
@@ -279,15 +282,12 @@ class TrackerCliTests(unittest.TestCase):
 
         with mock.patch("pose_receiver.socket.socket", return_value=FakeSocket()), \
              mock.patch("pose_receiver.serve", side_effect=serve_spy), \
-             mock.patch("pose_receiver.PoseBridge") as parameters, \
              mock.patch("pose_receiver.TrackerBridge") as trackers, \
              contextlib.redirect_stdout(io.StringIO()):
             main([])
-            main(["--osc"])
             main(TRACKER_ARGS)
         self.assertEqual(captured[0], None)
-        self.assertIs(captured[1], parameters.return_value)
-        self.assertIs(captured[2], trackers.return_value)
+        self.assertIs(captured[1], trackers.return_value)
         self.assertEqual(trackers.call_args.args[0].calibration.loss_timeout_ms, 250)
         self.assertEqual(trackers.call_args.args[0].hold_ms, 0)
 

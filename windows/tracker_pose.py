@@ -14,7 +14,7 @@ import statistics
 from dataclasses import dataclass
 from typing import Any
 
-from pose_control import point_confident
+from tracker_utils import point_confident
 from tracker_output import TrackerTransform
 
 Vector3 = tuple[float, float, float]

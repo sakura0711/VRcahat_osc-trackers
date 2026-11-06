@@ -17,7 +17,6 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 from console_status import StatusConsole
-from pose_control import DEFAULT_CONFIDENCE, IDLE_VALUES, JOINTS, OscOutput, PARAMETERS, PoseController, point_confident
 from tracker_bridge import TrackerBridge, TrackerBridgeConfig
 from tracker_pose import TrackerCalibrationConfig
 
@@ -125,14 +124,12 @@ class ReceiverStats:
     first_arrival_ns: int | None = None
     last_arrival_ns: int | None = None
     last_interval_ms: float | None = None
-    last_pose: dict[str, Any] | None = None
     intervals_ms: deque[float] = field(default_factory=lambda: deque(maxlen=STAT_WINDOW))
     jitter_ms: deque[float] = field(default_factory=lambda: deque(maxlen=STAT_WINDOW))
     processing_ms: deque[float] = field(default_factory=lambda: deque(maxlen=STAT_WINDOW))
     phone_processing_ms: deque[float] = field(default_factory=lambda: deque(maxlen=STAT_WINDOW))
     pose_to_osc_ms: deque[float] = field(default_factory=lambda: deque(maxlen=STAT_WINDOW))
     packet_bytes: deque[float] = field(default_factory=lambda: deque(maxlen=STAT_WINDOW))
-    joint_confident_frames: dict[str, int] = field(default_factory=lambda: dict.fromkeys(PARAMETERS, 0))
     osc_updates: int = 0
     osc_errors: int = 0
 
@@ -153,7 +150,6 @@ class ReceiverStats:
             self.last_seq = None
             self.last_arrival_ns = None
             self.last_interval_ms = None
-            self.last_pose = None
             self.sessions += 1
         seq = packet["seq"]
         if self.last_seq is not None:
@@ -175,15 +171,9 @@ class ReceiverStats:
         self.packet_bytes.append(float(size))
         if packet["personDetected"]:
             self.pose_frames += 1
-            self.last_pose = packet
             self.phone_processing_ms.append(float(packet["inferenceMs"]))
-            landmarks = packet["landmarks"]
-            for name, indices in JOINTS.items():
-                if all(point_confident(landmarks[index], DEFAULT_CONFIDENCE) for index in indices):
-                    self.joint_confident_frames[name] += 1
         else:
             self.no_pose_frames += 1
-            self.last_pose = None
         return True
 
     def summary(self, elapsed_seconds: float) -> dict[str, Any]:
@@ -221,74 +211,7 @@ class ReceiverStats:
             "sessions": self.sessions,
             "osc_updates": self.osc_updates,
             "osc_errors": self.osc_errors,
-            "joint_confident_pct": {
-                name: round(100.0 * count / self.pose_frames, 2) if self.pose_frames else None
-                for name, count in self.joint_confident_frames.items()
-            },
         }
-
-
-class PoseBridge:
-    def __init__(self, port: int, calibration_seconds: float, smoothing_ms: float, hold_ms: float,
-                 console: StatusConsole | None = None):
-        self.controller = PoseController(calibration_seconds=calibration_seconds, smoothing_ms=smoothing_ms, hold_ms=hold_ms)
-        self.output = OscOutput(port)
-        self.console = console if console is not None else StatusConsole()
-        self.session: str | None = None
-        self.last_progress_ns = 0
-
-    @property
-    def output_ready(self) -> bool:
-        return self.controller.baseline is not None
-
-    def send(self, values: dict[str, float], stats: ReceiverStats) -> None:
-        if not values:
-            return
-        try:
-            self.output.send(values)
-            stats.osc_updates += len(values)
-        except OSError as error:
-            stats.osc_errors += 1
-            self.console.emit("error", f"Six-parameter OSC send failed: {error}", error=True)
-
-    def status_line(self, now_ns: int) -> tuple[str, str]:
-        if self.output_ready:
-            return "ready", "Six parameters calibrated; OSC sends on valid frames."
-        counts = {name: len(self.controller.calibration[name]) for name in PARAMETERS}
-        missing = max(0, self.controller.minimum_calibration_samples - min(counts.values()))
-        if self.controller.started_ns is None:
-            return "check", (f"Six parameters await a full-body neutral T-pose; need at least "
-                             f"{self.controller.calibration_seconds:g}s and "
-                             f"{self.controller.minimum_calibration_samples} frames per joint; pose OSC blocked.")
-        remaining = max(0.0, self.controller.calibration_seconds -
-                        (now_ns - self.controller.started_ns) / 1e9)
-        return "loading", (f"Six-parameter calibration: earliest {remaining:.1f}s to time gate, "
-                           f"at least {missing} more frames per joint; pose OSC blocked.")
-
-    def on_packet(self, packet: dict[str, Any], now_ns: int, stats: ReceiverStats) -> None:
-        if packet["session"] != self.session:
-            self.send(dict(IDLE_VALUES), stats)
-            self.session = packet["session"]
-            self.controller.reset()
-            self.last_progress_ns = 0
-            self.console.emit("loading", (f"Six-parameter calibration started. Hold a full-body neutral T-pose; "
-                                          f"earliest {self.controller.calibration_seconds:g}s to time gate."))
-        was_calibrated = self.controller.baseline is not None
-        values = self.controller.ingest(packet, now_ns)
-        if not was_calibrated and self.controller.baseline is not None:
-            self.console.emit("ready", "Six parameters calibrated; sending local OSC. Confirm reception in VRChat.")
-        elif self.controller.baseline is None and now_ns - self.last_progress_ns >= 2_000_000_000:
-            counts = {name: len(self.controller.calibration[name]) for name in PARAMETERS}
-            self.console.emit("loading", "Six-parameter samples=" + json.dumps(counts, separators=(",", ":")))
-            self.last_progress_ns = now_ns
-        self.send(values, stats)
-
-    def tick(self, now_ns: int, stats: ReceiverStats) -> None:
-        self.send(self.controller.tick(now_ns), stats)
-
-    def close(self, stats: ReceiverStats) -> None:
-        self.send(dict(IDLE_VALUES), stats)
-        self.output.close()
 
 
 class PacketObserver(Protocol):
@@ -304,7 +227,7 @@ def serve(
     duration: float | None,
     report_interval: float,
     allowed_sender: str | None = None,
-    bridge: PoseBridge | TrackerBridge | None = None,
+    bridge: TrackerBridge | None = None,
     observer: PacketObserver | None = None,
     console: StatusConsole | None = None,
 ) -> ReceiverStats:
@@ -408,13 +331,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--report-interval", type=float, default=5.0)
     parser.add_argument("--color", choices=("auto", "always", "never"), default="auto",
                         help="human status color; auto only on interactive terminals")
-    parser.add_argument("--osc", action="store_true", help="send calibrated parameters to local VRChat")
-    parser.add_argument("--output", choices=("none", "parameters", "trackers"),
-                        help="explicit output mode; default none; --osc remains parameters")
+    parser.add_argument("--output", choices=("none", "trackers"),
+                        help="explicit output mode; default none")
     parser.add_argument("--osc-port", type=int, default=9000, help="local VRChat OSC input port")
-    parser.add_argument("--calibration-seconds", type=float, default=3.0)
-    parser.add_argument("--smoothing-ms", type=float, default=35.0)
-    parser.add_argument("--hold-ms", type=float, default=250.0)
     parser.add_argument("--tracker-hip-id", type=int)
     parser.add_argument("--tracker-left-foot-id", type=int)
     parser.add_argument("--tracker-right-foot-id", type=int)
@@ -428,9 +347,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tracker-max-jump-m", type=float)
     parser.add_argument("--tracker-max-yaw-jump-deg", type=float)
     args = parser.parse_args(argv)
-    if args.osc and args.output is not None:
-        parser.error("--osc conflicts with --output; use one output selector")
-    mode = "parameters" if args.osc else args.output or "none"
+    mode = args.output or "none"
     if not private_ipv4(args.bind):
         parser.error("--bind must be a specific RFC1918 or loopback IPv4 address; 0.0.0.0 is not allowed")
     if args.allow_sender and not private_ipv4(args.allow_sender):
@@ -443,9 +360,6 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--report-interval must be finite and positive")
     if not 1 <= args.osc_port <= 65535:
         parser.error("--osc-port must be between 1 and 65535")
-    if any(not math.isfinite(value) or value < 0 for value in
-           (args.calibration_seconds, args.smoothing_ms, args.hold_ms)):
-        parser.error("calibration, smoothing, and hold settings must be finite and nonnegative")
     tracker_options = (args.tracker_hip_id, args.tracker_left_foot_id, args.tracker_right_foot_id,
                        args.tracker_hip_height, args.tracker_mirror, args.tracker_swap_left_right,
                        args.tracker_forward_sign, args.tracker_yaw, args.tracker_loss_ms,
@@ -480,10 +394,7 @@ def main(argv: list[str] | None = None) -> int:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.bind((args.bind, args.port))
             console.emit("check", f"Listening on {args.bind}:{args.port} UDP (private network); waiting for phone packets.")
-            bridge = (PoseBridge(args.osc_port, args.calibration_seconds, args.smoothing_ms, args.hold_ms,
-                                 console=console)
-                      if mode == "parameters" else
-                      TrackerBridge(tracker_config, args.osc_port, console=console) if tracker_config is not None else None)
+            bridge = TrackerBridge(tracker_config, args.osc_port, console=console) if tracker_config is not None else None
             if bridge is not None:
                 console.emit("loading", f"OSC {mode} targets 127.0.0.1:{args.osc_port}; pose output waits for calibration.")
             serve(sock, args.duration, args.report_interval, args.allow_sender, bridge, None, console)

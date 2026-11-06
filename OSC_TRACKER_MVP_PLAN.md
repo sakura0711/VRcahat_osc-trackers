@@ -6,7 +6,7 @@
 
 一支 Android 手機拍攝人體姿勢，在手機上以 MediaPipe 取得 landmarks，經私人 Wi-Fi UDP 傳給 Windows。Windows 將可信姿勢換算為 VRChat 原生 OSC Tracker 的公尺位置與 Euler 旋轉，由 VRChat FBT／IK 驅動未修改的購買 Humanoid Avatar，並在私人房間讓其他玩家看見。
 
-現有六個 `Puppet/*` Avatar Parameters 保留供可編輯的自製 Avatar 使用；它們不是購買 Avatar 的通用 FBT 路線。不修改或注入 VRChat client，不要求修改購買 Avatar。虛擬 HMD 提供頭與雙手，OSC 只需先送髖與雙腳。單鏡頭的房間深度、遮擋與腳部朝向仍是待解問題。
+不修改或注入 VRChat client，也不要求修改購買 Avatar。虛擬 HMD 提供頭與雙手，OSC 先送髖與雙腳。單鏡頭的房間深度、遮擋與腳部朝向仍是待解問題。
 
 ## 已證實：Phase 0
 
@@ -35,7 +35,7 @@
 
 不需實機的安全檢查已補上數值邊界、水平髖朝向與超時後時間高水位保護；2026-11-06 Android 回放階段 84 項 Windows 測試通過，後續完整 95 項通過，包含 32 組已知相機座標變換、明確左右標籤設定、高度診斷分解、同封包 2D／3D 記錄重播、離線模型／Android 回放結果驗證與測試工具提前停止。預覽器只有明確指定 `--record PATH` 才保存來源 landmarks、診斷及完整精度輸出；離線重播不開 socket。`soak_tracker_loopback.py` 的 60 秒合成 UDP 情境也通過，涵蓋失追與新工作階段，沒有 OSC 輸出。這些結果不替代實測尺度、腳部 yaw 品質或 HMD 對齊。
 
-`pose_receiver.py` 已有明確的 `--output none|parameters|trackers`；預設不送 OSC，舊 `--osc` 仍送六個 Avatar 參數。Tracker 模式經 `tracker_bridge.py` 使用離線校正器與 `TrackerOutput`，要求明填角色 ID、髖高、鏡像、左右標籤、前向與 yaw。低信心／缺點不送新姿勢；`T` 預設 250 ms 可調，短暫保持 `H` 獨立且預設 0。隔離 UDP／合成自動測試已通過；**本機手機即時 OSC 與 Avatar 動作已由使用者確認**，其餘驗收界線見 [Windows 操作](windows/README.md) 與 [測試紀錄](windows/TEST_RESULTS.md)。
+`pose_receiver.py` 明確使用 `--output none|trackers`；預設不送 OSC。Tracker 模式經 `tracker_bridge.py` 使用離線校正器與 `TrackerOutput`，要求明填角色 ID、髖高、鏡像、左右標籤、前向與 yaw。低信心／缺點不送新姿勢；`T` 預設 250 ms 可調，短暫保持 `H` 獨立且預設 0。隔離 UDP／合成自動測試已通過；**本機手機即時 OSC 與 Avatar 動作已由使用者確認**，其餘驗收界線見 [Windows 操作](windows/README.md) 與 [測試紀錄](windows/TEST_RESULTS.md)。
 
 2026-11-06 已完成同影格 2D／3D 右腳 20 cm 箱面語音量測，使用者確認全程照做。三段保持區間 568／568 幀有效、零失追；全檔 1,542 幀與 2,060 次 tick 離線重播一致，零手機 OSC。右踝只增加 6.87／7.84 cm；共用地面修正前已只增加約 7.7–7.8 cm。代表來源兩踝 3D 向量的變化乘尺度後長度僅 11.91／14.77 cm，支持低估不只出在地面平移；單改固定上軸投影也不足。2D 點有移動，但缺少影像真值，仍不能區分 2D 定位與三維估計誤差。原始資料留在本機 `captures`，設定、統計與 SHA-256 見 [驗證紀錄](windows/TEST_RESULTS.md)。姿勢演算法未改動，不能把兩輪數字差異當成改善。
 
@@ -43,7 +43,7 @@
 
 | 階段 | 工作與驗收 |
 | --- | --- |
-| Phase 1：輸出整合 | 已建立 `--output none|parameters|trackers`，預設不送 OSC。只有座標校正完成且當次角色 ID 已明填才允許 tracker 輸出；停止、超時及 loopback 自動測試已完成。本機手機即時動作已初驗，遠端與品質驗收待完成。 |
+| Phase 1：輸出整合 | 已建立 `--output none|trackers`，預設不送 OSC。只有座標校正完成且當次角色 ID 已明填才允許 tracker 輸出；停止、超時及 loopback 自動測試已完成。本機手機即時動作已初驗，遠端與品質驗收待完成。 |
 | Phase 2：單手機姿勢 | 將 MediaPipe world landmarks 以身高、地面、相機面向／鏡像和初始 yaw 校正為髖與雙腳的 VRChat 座標；處理低信心、遮擋與失追。先驗證站立、抬腳、蹲下與轉身。 |
 | Phase 3：自然度 | 測量腳部抖動與延遲，再選擇濾波及是否增加胸、肘、膝等點。只加入品質足以改善 IK 的 tracker。 |
 | Phase 4：實機驗收 | 以單手機在未修改的購買 Avatar 上完成本機與遠端盲測，並記錄 10 分鐘 FPS、封包、姿勢有效率、漂移及延遲。 |

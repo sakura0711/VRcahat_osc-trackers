@@ -10,30 +10,6 @@ python -B pose_receiver.py --bind 192.168.137.1 --port 8765 --allow-sender 192.1
 
 在手機 App 輸入電腦 IP 與相同 UDP 埠，按「開始傳送」。僅顯示已送封包時，不代表對方已收到；手機顯示「收到 ACK」才表示收到 Windows 回覆。App 離開前景會停止傳送。若收不到 ACK，檢查 Wi-Fi、接收端位址、埠號及 Windows 防火牆。
 
-## 姿勢參數與 VRChat OSC（測試中）
-
-接收端可選擇把姿勢轉成六個 Float 參數，並透過 OSC 發到同一台電腦的 `127.0.0.1:9000`。預設不會送出 OSC；使用時請先開啟 VRChat 的 OSC，並加上 `--osc`：
-
-~~~powershell
-python -B pose_receiver.py --bind 192.168.137.1 --port 8765 --allow-sender 192.168.137.189 --osc
-~~~
-
-上面的 IP 僅供範例，請改成目前設備的 IP。手機開始傳送後，全身入鏡並保持 T 字站姿，直到終端機顯示校正完成；預設在六個關節都取得近期有效資料後至少持續 3 秒，且每個關節在最近 3 秒內各有 5 筆有效樣本。任一關節超過 1 秒沒有有效資料，或封包中斷超過 1 秒，會重新計時，避免使用長時間遮擋前的舊樣本。這些條件檢查的是可見度與幾何資料，仍須由人保持 T 字姿勢；若持續無法完成，請查看顯示的各關節有效樣本數、調整入鏡範圍和光線。調短校正時間時，樣本視窗最少保留 1 秒。
-
-輸出名稱為 `Puppet/LeftArmRaise`、`Puppet/RightArmRaise`、`Puppet/LeftElbowFlex`、`Puppet/RightElbowFlex`、`Puppet/LeftKneeFlex` 和 `Puppet/RightKneeFlex`。校正姿勢為 0；相對角度變化 90 度對應 1，值限制在 -1 到 1。每個關節只採用 visibility／presence 可用且不低於 0.5 的點，預設 35 ms 平滑；關節遺失 250 ms 後回到待機值：雙臂為 -1（放下），肘與膝為 0。新手機工作階段開始校正及正常結束接收端時也會送出待機值；T 字校正完成仍送出全 0。這些時間不是端到端延遲；`--smoothing-ms`、`--hold-ms` 與 `--calibration-seconds` 可調整。
-
-VRChat Desktop 已回傳六個 OSC 測試參數；使用者確認手臂、彎膝與 WASD 共存正常，先前彎膝走路滑行的問題已修正並在遊戲內重測。這些是以診斷工具直接送 OSC 測得，尚未驗證手機經 receiver 到 VRChat 的完整流程。這是六個單軸角度的最小測試，並非完整的 3D 全身追蹤。
-
-### 單參數遊戲內診斷
-
-套用本機測試 Avatar 並開啟 VRChat OSC 後，先停止 receiver，避免兩個程式同時改寫參數；例如在 `windows` 目錄執行：
-
-~~~powershell
-python -B osc_probe.py LeftArmRaise --value 1 --hold 5
-~~~
-
-腳本會先送待機值（雙臂 -1、其餘 0），再將所選參數維持 5 秒，最後送回待機值。依次將名稱換成 `RightArmRaise`、`LeftElbowFlex`、`RightElbowFlex`、`LeftKneeFlex`、`RightKneeFlex`，在 VRChat 畫面觀察各動作。也可同時指定多個參數，例如 `python -B osc_probe.py LeftArmRaise LeftElbowFlex --hold 10`，檢查同一隻手抬起並彎肘。上臂可另以 `--value 0` 測試 T 字平舉；本測試 Avatar 的肘與膝負值限制在伸直。腳本只會送往本機 `127.0.0.1:9000`；送出成功不代表遊戲已收到。
-
 ## 協定與量測
 
 每個 UDP 封包是一份 UTF-8 JSON（version 1），含 session、遞增 seq、相機原始時間戳、手機分析開始／送出單調時間、處理時間及姿勢資料。偵測到人體時，normalized 與 world landmarks 均為 33 個；沒有人體時兩個陣列為空。每個點包含 x、y、z 和可用的 visibility／presence；數值以四位小數傳輸。不傳送相機影像。
@@ -45,13 +21,13 @@ Windows 驗證格式與數量、忽略舊序號，並以 session、seq 與手機
 Windows 定期輸出收到／有效／無人體數、schema 錯誤、序號缺口、亂序、到達間隔、相鄰間隔抖動、接收處理時間及封包大小，也包含：
 
 - `arrival_fps` 是有效封包的平均到達率；`pose_arrival_fps` 是依有效封包中人體比例估算的人體封包到達率。兩者都不是手機相機或辨識回呼 FPS。
-- `pose_frame_pct` 是有效封包中帶人體結果的比例。`joint_confident_pct` 的分母是帶人體的有效封包，計算各關節的三個點信心是否達 0.5；它不驗證骨骼幾何或動作正確性。
+- `pose_frame_pct` 是有效封包中帶人體結果的比例；它不驗證骨骼幾何或動作正確性。
 - `phone_processing_p50_ms`／`phone_processing_p95_ms` 來自所接收人體封包的 `inferenceMs`。App 正常提供分析開始到結果擷取完成的合計；分段計時不可用時使用 App 的備援估計。它不是純模型推論時間或人體到 Avatar 的延遲。百分位最多使用最近 10,000 筆樣本。
 - `udp_resets` 計數 Windows 回報先前 ACK 的 UDP 連接重設；`oversized` 計數過大的資料報。接收端遇到這兩種狀況後繼續監聽。
 
 序號缺口是估計值：第一個收到封包之前及最後一個之後的損失無法得知；手機在傳送前覆蓋過期影格則另列，不算網路丟包。接收端不寫入照片或姿勢資料。
 
-啟用 OSC 時，`pose_to_osc_p50_ms`／`pose_to_osc_p95_ms` 記錄 Windows 收到人體封包後到本機 OSC 傳送呼叫結束的時間，只計校正已完成且有 OSC 送出的封包；其中仍可能包含低信心後回到待機值的更新。這包含驗證、ACK 與姿勢轉換，但不包含 Wi-Fi 單程、VRChat 收取或渲染；校正與終端機輸出可能影響少數樣本。`osc_updates` 是本機傳送呼叫數，並非 VRChat 確認收到的數量。
+啟用 tracker OSC 時，`pose_to_osc_p50_ms`／`pose_to_osc_p95_ms` 記錄 Windows 收到人體封包後到本機 OSC 傳送呼叫結束的時間，只計校正已完成且有 OSC 送出的封包。這包含驗證、ACK 與姿勢轉換，但不包含 Wi-Fi 單程、VRChat 收取或渲染；校正與終端機輸出可能影響少數樣本。`osc_updates` 是本機送出的 OSC 訊息數，並非 VRChat 確認收到的數量。
 
 協定沒有加密或驗證，只適合可信任的私人 LAN；--allow-sender 僅限制來源 IP，不是身分驗證。
 
@@ -59,26 +35,7 @@ Windows 定期輸出收到／有效／無人體數、schema 錯誤、序號缺�
 
 ~~~powershell
 python -B -m unittest discover -v
-python -B soak_loopback.py --duration 600 --fps 15
 ~~~
-
-`soak_loopback.py` 只使用 `127.0.0.1`、隨機本機 UDP 埠及合成姿勢，檢查 receiver、ACK、校正和 OSC 編碼；不會傳送到 VRChat。其結果不能代表實際手機、Wi-Fi 或遊戲的穩定性。
-
-## 實機 10 分鐘測試準備
-
-1. 使用新建置的 Android debug APK 更新手機；詳見 `android/README.md`。固定手機、確定全身入鏡，手機與電腦連同一個可信任的私人 LAN，VRChat Desktop 套用本機 Robot 並開啟 OSC。
-2. 在電腦執行 `ipconfig`，以目前連線介面的私人 IPv4 取代下面範例。若要保留紀錄，在 `windows` 目錄執行：
-
-   ~~~powershell
-   New-Item -ItemType Directory -Force .\captures | Out-Null
-   $receiverIp = '192.168.137.1'
-   python -B -u pose_receiver.py --bind $receiverIp --port 8765 --osc --duration 660 --report-interval 30 | Tee-Object -FilePath .\captures\receiver-run.log
-   ~~~
-
-3. 開啟接收端後盡快在手機填入相同 IP／埠並開始傳送；確認 ACK，保持 T 字姿勢至校正完成，再觀察六個動作與 WASD。660 秒包含啟動與校正時間，不自動保證有滿 10 分鐘的有效姿勢；需確認實際連續時間。
-4. 手機 FPS、ACK RTT、遺失與溫度紀錄方式見 `android/README.md`。彙整 Windows 的 `FINAL`，並記下是否一直前景運行、方向是否正確及是否發熱／降頻。以額外錄影裝置逐格量測前，不報告人體到螢幕的端到端延遲。
-
-`captures` 已由 Git 忽略，日誌不含相機影像或 landmark 座標，但可能包含私人網路位址；請自行保留於可信任的電腦。
 
 ## Phase 0：原生 OSC Tracker 探針
 
@@ -88,19 +45,19 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 `tracker_output.py` 提供 OSC Vector3 編碼與只送到本機的 `TrackerOutput`。`pose_receiver.py` 的 `--output trackers` 已透過 `tracker_bridge.py` 使用它；呼叫端須明填當次確認的 `hip`、`left_foot`、`right_foot` 相異 ID（1–8）和校正設定。3／4 曾互換，不可沿用上次映射。2026-11-06 本機手機即時測試已確認 OSC Debugger 更新與 Avatar 動作；遠端、腳別精度和長時間穩定性尚未驗收。
 
-`--output none` 是預設，沒有 OSC socket；`--output parameters` 與既有 `--osc` 都走六個 Avatar 參數。`--osc` 和 `--output` 不能同時使用。即時 tracker 指令範例（數值只示意已知前鏡頭設定；啟用前須重新確認當次 ID、手機左右方向、髖高和 yaw）：
+`--output none` 是預設，沒有 OSC socket；只有明確指定 `--output trackers` 才會建立本機 OSC 輸出。即時 tracker 指令範例（數值只示意已知前鏡頭設定；啟用前須重新確認當次 ID、手機左右方向、髖高和 yaw）：
 
 ~~~powershell
 python -B pose_receiver.py --bind 192.168.137.1 --allow-sender 192.168.137.189 --port 8765 --output trackers --tracker-hip-id 1 --tracker-left-foot-id 3 --tracker-right-foot-id 4 --tracker-hip-height 0.90 --tracker-mirror yes --tracker-swap-left-right yes --tracker-forward-sign -1 --tracker-yaw 0
 ~~~
 
-未完成站姿校正前零 tracker 輸出。每幀必要點低信心、無人或資料不完整時不送新姿勢；最後有效 transform 超過 `--tracker-loss-ms`（預設 250 ms，允許 0–5000 ms 的正值）須重校正。`--tracker-hold-ms` 預設 0，不重送舊姿勢；若明確設為正值，最多為 `min(loss, 250 ms)`。突變超過預設 0.5 m 或 90° 會要求重校正；可用 `--tracker-max-jump-m`／`--tracker-max-yaw-jump-deg` 調整，這些初值尚未實機調校。`--hold-ms` 仍只屬六參數模式。停止發送不保證 VRChat 立即清除最後姿勢。平滑、速度限制及失追後過渡尚未完成。
+未完成站姿校正前零 tracker 輸出。每幀必要點低信心、無人或資料不完整時不送新姿勢；最後有效 transform 超過 `--tracker-loss-ms`（預設 250 ms，允許 0–5000 ms 的正值）須重校正。`--tracker-hold-ms` 預設 0，不重送舊姿勢；若明確設為正值，最多為 `min(loss, 250 ms)`。突變超過預設 0.5 m 或 90° 會要求重校正；可用 `--tracker-max-jump-m`／`--tracker-max-yaw-jump-deg` 調整，這些初值尚未實機調校。停止發送不保證 VRChat 立即清除最後姿勢。tracker 的平滑、速度限制及失追後過渡尚未完成。
 
 接收器的人類可讀輸出採用簡短英文，避免部分 Windows 主控台顯示中文亂碼。標記為 `[check]`（等待或校正受阻）、`[loading]`（校正中）、`[ready]`（開始或持續送 OSC）、`[wait]`（短暫暫停）、`[lost]`（失追須重校正）、`[error]`（傳送錯誤）。tracker 校正期間最多每秒提示一次；每個報告週期會顯示已收封包、無姿勢封包、OSC 訊息數、拒絕來源數與下一次報告間隔。校正時間只顯示「earliest」剩餘秒數，仍須連續有效影格與足夠樣本。缺少有效影格時沒有可信倒數，會列出阻擋原因與低信心點。`--report-interval 5` 可調整報告頻率。`--color auto` 預設僅在支援 ANSI 的互動終端機顯色；`--color always` 強制顯色，`--color never` 關閉。`STATUS`／`FINAL` JSON 行保持原格式，供既有工具讀取；Android MediaPipe 輸出不受影響。
 
 ### 已存 ZIP 的三姿勢回放
 
-`tracker_replay.py` 可把已校正的原始手機 landmarks 準備成「站姿 → 右腳上箱 → 放回」三個固定姿勢，預設不建立 socket。已有 95 項 Windows 測試與真實 ZIP 的不送 OSC 檢查；後續本機鏡子已確認原始 ZIP 的右腳抬起清楚可見。探索測試須先依當輪偏好通知、等待使用者就位，再明確啟用 `--osc`、核對 ZIP 雜湊與三個角色 ID；啟用後先維持站姿，收到 `play` 才跑一次有限序列。手機 App 無需更動。完整指令、停止行為與限制見 [回放指南](TRACKER_REPLAY_GUIDE.md)。這不是 live receiver 的 tracker 輸出模式。
+`tracker_replay.py` 可把已校正的原始手機 landmarks 準備成「站姿 → 右腳上箱 → 放回」三個固定姿勢，預設不建立 socket。Windows 全套 100 項測試通過，真實 ZIP 亦有不送 OSC 檢查；後續本機鏡子已確認原始 ZIP 的右腳抬起清楚可見。探索測試須先依當輪偏好通知、等待使用者就位，再明確啟用 `--osc`、核對 ZIP 雜湊與三個角色 ID；啟用後先維持站姿，收到 `play` 才跑一次有限序列。手機 App 無需更動。完整指令、停止行為與限制見 [回放指南](TRACKER_REPLAY_GUIDE.md)。這不是 live receiver 的 tracker 輸出模式。
 
 即時手機 tracker 的已實作保護與後續平滑方案見 [安全與平滑計畫](LIVE_TRACKER_SAFETY_PLAN.md)。
 

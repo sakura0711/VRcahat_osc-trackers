@@ -13,7 +13,7 @@ import struct
 from dataclasses import dataclass
 from typing import Mapping
 
-from pose_control import osc_string
+from tracker_utils import osc_string
 
 
 ROLES = ("hip", "left_foot", "right_foot")

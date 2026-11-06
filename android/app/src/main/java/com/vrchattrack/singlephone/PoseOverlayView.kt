@@ -11,7 +11,7 @@ import java.util.Locale
 import kotlin.math.max
 
 /**
- * Debug-only overlay for the joints required by the first six OSC parameters.
+ * Debug-only overlay for the main body joints used during pose inspection.
  * It intentionally omits face, fingers, and foot tips to keep the display readable.
  */
 class PoseOverlayView(

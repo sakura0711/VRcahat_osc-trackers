@@ -1,6 +1,12 @@
 # Windows 接收端驗證紀錄
 
-最後更新：2026-11-06
+最後更新：2026-11-07
+
+本頁以下保留當時的歷史測試紀錄。舊六參數 Puppet 程式、Robot Unity 專案與操作文件已從目前主線移除；舊紀錄中的指令與 `joint_confident_pct` 不再是現行 receiver 介面。移除前的完整檔案可從 Git commit `36061e1` 找回。目前即時輸出只使用原生 OSC trackers；tracker 平滑、動作預測與失追後過渡尚未實作。
+
+## 舊六參數路線清理（2026-11-07）
+
+移除 receiver 的 `--osc` 六參數別名、`--output parameters`、`PoseBridge`、35 ms 六參數平滑、專用診斷／長測腳本及 Robot Unity 專案。共用的信心判斷與 OSC 字串編碼移到 `tracker_utils.py`；`--output trackers`、原生 tracker 探針與 `tracker_replay.py --osc` 保留。`STATUS`／`FINAL` 移除只描述六個 Puppet 關節的 `joint_confident_pct` 欄位，其他 tracker 計數保留。Windows 執行 `python -B -m unittest discover -v`：**100 項通過**。未進行手機或 VRChat 新一輪實機驗收。
 
 ## 手機即時姿勢到本機 VRChat 的首次可見動作（2026-11-06 深夜）
 
@@ -214,4 +220,4 @@ App 0.2.0 已由使用者更新並成功匯出。首份頭部近照的 3 組配�
 | 本機 OSC 發送／解析錯誤 | 0／0 |
 | 六項參數各自解析數 | 各 8,957 |
 
-這不是 Android、Wi-Fi 或 VRChat 遊戲內測試；資料中的手機處理時間是固定的合成值，不能作為手機效能結果。先前直接發送 OSC 到 VRChat 的動作及 WASD 確認，另見 `../VRChatTrackAvatar/TEST_RESULTS.md`。
+這不是 Android、Wi-Fi 或 VRChat 遊戲內測試；資料中的手機處理時間是固定的合成值，不能作為手機效能結果。先前直接發送 OSC 到 VRChat 的動作及 WASD 確認，舊 Robot 紀錄可於 Git commit `36061e1` 的 `VRChatTrackAvatar/TEST_RESULTS.md` 查閱。

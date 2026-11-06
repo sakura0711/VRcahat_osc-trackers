@@ -56,7 +56,7 @@ class ProtocolTests(unittest.TestCase):
         self.assertFalse(stats.observe(packet(9), "127.0.0.1", 5_000_000, 100))
         self.assertEqual(stats.out_of_order, 2)
 
-    def test_summary_reports_pose_rate_processing_and_joint_confidence(self):
+    def test_summary_reports_pose_rate_and_processing(self):
         stats = ReceiverStats()
         first = packet(seq=1)
         second = packet(seq=2)
@@ -73,9 +73,7 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(summary["pose_arrival_fps"], 0.67)
         self.assertEqual(summary["phone_processing_p50_ms"], 12.5)
         self.assertEqual(summary["phone_processing_p95_ms"], 22.5)
-        self.assertEqual(summary["joint_confident_pct"]["Puppet/LeftElbowFlex"], 50.0)
-        self.assertEqual(summary["joint_confident_pct"]["Puppet/RightElbowFlex"], 100.0)
-        self.assertEqual(summary["joint_confident_pct"]["Puppet/LeftArmRaise"], 100.0)
+        self.assertNotIn("joint_confident_pct", summary)
 
     def test_only_private_and_loopback_ipv4_addresses_are_allowed(self):
         self.assertTrue(private_ipv4("192.168.20.100"))

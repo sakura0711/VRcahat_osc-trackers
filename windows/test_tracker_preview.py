@@ -157,7 +157,7 @@ class TrackerPreviewTests(unittest.TestCase):
             server.bind(("127.0.0.1", 0))
             worker = threading.Thread(target=lambda: results.append(
                 serve(server, 0.4, 10.0, observer=preview)))
-            with mock.patch("pose_receiver.OscOutput", side_effect=AssertionError("OSC opened")) as osc:
+            with mock.patch("tracker_bridge.TrackerOutput", side_effect=AssertionError("OSC opened")) as osc:
                 with contextlib.redirect_stdout(io.StringIO()):
                     worker.start()
                     try:
@@ -193,7 +193,7 @@ class TrackerPreviewTests(unittest.TestCase):
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as available:
             available.bind(("127.0.0.1", 0))
             port = available.getsockname()[1]
-        with mock.patch("pose_receiver.OscOutput", side_effect=AssertionError("OSC opened")) as osc, \
+        with mock.patch("tracker_bridge.TrackerOutput", side_effect=AssertionError("OSC opened")) as osc, \
                 mock.patch("tracker_preview.TrackerRecording") as recording:
             with contextlib.redirect_stdout(io.StringIO()):
                 result = main(["--bind", "127.0.0.1", "--port", str(port),
