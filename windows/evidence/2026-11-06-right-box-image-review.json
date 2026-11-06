@@ -1,0 +1,243 @@
+{
+  "date": "2026-11-06",
+  "source_commit": "0dea01a2e680e560705b3186e920c3df4ce382db",
+  "kind": "opt-in photo-only diagnostic, not live tracking acceptance",
+  "raw_zip": {
+    "local_ignored_path": "windows/captures/right-box-images-20261106/source.zip",
+    "sha256": "da27054e6dab99f031cb5cc4f897bde61a180f8f599d1cf6f4978c0795645d2c",
+    "bytes": 7955483,
+    "capture_session": "d9173e82-db7d-4223-b2c9-46123c35dc69",
+    "frame_count": 22,
+    "first_frame_id": 109440672,
+    "last_frame_id": 109504208,
+    "duration_between_samples_seconds": 63.536
+  },
+  "input": {
+    "app_version": "0.2.0",
+    "width": 480,
+    "height": 640,
+    "rotation_degrees": 270,
+    "mirrored": true,
+    "model_asset": "pose_landmarker_lite.task",
+    "delegate": "not recorded; GPU/CPU not established"
+  },
+  "user_confirmed": {
+    "camera": "front",
+    "camera_height_cm": 125,
+    "person_distance_cm": 300,
+    "hip_height_cm": 90,
+    "box_top_height_cm": 20,
+    "stable_box": true,
+    "sequence_completed": "both feet on floor -> own right foot sole flat on box, left on floor -> right back on floor",
+    "new_zip_exported": true
+  },
+  "method": {
+    "phase_assignment": "visual inspection of original PNGs; never subtract phone and Windows clocks",
+    "phases": "before 3..7, box 10..15, after 17..21; exclude setup, look-down and boundary frames",
+    "geometry": "existing _frame and _transforms with one calibration from frames 3..7; each phase metric is median of per-frame values",
+    "sparse_timing": "3-second photo samples; 5000ms timeouts only in offline diagnostic config; runtime defaults unchanged; no live availability/timeout result",
+    "config": {
+      "standing_hip_height_m": 0.9,
+      "neutral_yaw_deg": 0,
+      "mirrored_input": true,
+      "forward_sign": -1,
+      "confidence": 0.5,
+      "calibration_seconds": 0,
+      "minimum_samples": 5,
+      "max_sample_gap_ms": 5000,
+      "loss_timeout_ms": 5000,
+      "swap_left_right": true
+    },
+    "calibration": {
+      "right": [
+        -0.9948669594463956,
+        0.0014541850625651648,
+        -0.10118111655683536
+      ],
+      "up": [
+        0.02207462213036417,
+        -0.9726963649493152,
+        -0.23102920307223154
+      ],
+      "forward": [
+        0.09875446349247068,
+        0.2320768557185153,
+        -0.9676713744759228
+      ],
+      "scale": 1.0492527565637952
+    },
+    "physical_right_indices": [
+      23,
+      25,
+      27,
+      29,
+      31
+    ],
+    "physical_left_indices": [
+      24,
+      26,
+      28,
+      30,
+      32
+    ],
+    "no_second_mirror": true,
+    "socket_creation_guard": true,
+    "osc_packets": 0,
+    "same_run_udp_recording": null
+  },
+  "phase_medians": {
+    "before": {
+      "frames": [
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "ankle_y_right_minus_left_px": 1.343999999999994,
+      "right_foot_y_cm": 11.01338418092962,
+      "left_foot_y_cm": 8.45698461816049,
+      "right_ankle_relative_hip_cm": -79.06264910803039,
+      "floor_shift_cm": 90.0,
+      "right_thigh_cm": 38.68910311702767,
+      "right_shin_cm": 38.52336693488771,
+      "shoulder_cm": 32.18831620324368,
+      "min_foot_confidence": 0.8302,
+      "world_delta_median": [
+        0.1642,
+        -0.026499999999999968,
+        -0.008000000000000007
+      ],
+      "right_ankle_px_median": [
+        248.35199999999998,
+        498.56
+      ]
+    },
+    "box": {
+      "frames": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "ankle_y_right_minus_left_px": -13.599999999999994,
+      "right_foot_y_cm": 16.064470513499906,
+      "left_foot_y_cm": 8.600902876012345,
+      "right_ankle_relative_hip_cm": -72.94927946187961,
+      "floor_shift_cm": 88.93908248392813,
+      "right_thigh_cm": 35.12559827595143,
+      "right_shin_cm": 39.67183841525504,
+      "shoulder_cm": 31.289831525803514,
+      "min_foot_confidence": 0.8417,
+      "world_delta_median": [
+        0.24584999999999999,
+        -0.0867,
+        0.04260000000000001
+      ],
+      "right_ankle_px_median": [
+        263.856,
+        484.15999999999997
+      ]
+    },
+    "after": {
+      "frames": [
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "ankle_y_right_minus_left_px": -1.0879999999999512,
+      "right_foot_y_cm": 10.938226433520537,
+      "left_foot_y_cm": 8.825299614361981,
+      "right_ankle_relative_hip_cm": -79.4816335937536,
+      "floor_shift_cm": 90.41182476797636,
+      "right_thigh_cm": 38.93564048529316,
+      "right_shin_cm": 38.78398638613621,
+      "shoulder_cm": 31.721458037107947,
+      "min_foot_confidence": 0.861,
+      "world_delta_median": [
+        0.2075,
+        -0.02400000000000002,
+        -0.0058
+      ],
+      "right_ankle_px_median": [
+        257.66400000000004,
+        497.856
+      ]
+    }
+  },
+  "changes_relative_to": {
+    "before": {
+      "right_ankle_rise_cm": 5.051086332570286,
+      "right_ankle_pre_floor_rise_cm": 6.1133696461507725,
+      "floor_shift_change_cm": -1.0609175160718678,
+      "relative_ankle_image_rise_px": 14.943999999999988,
+      "scaled_norm_of_median_world_delta_change_cm": 11.89462214885411
+    },
+    "after": {
+      "right_ankle_rise_cm": 5.126244079979369,
+      "right_ankle_pre_floor_rise_cm": 6.532354131873987,
+      "floor_shift_change_cm": -1.4727422840482234,
+      "relative_ankle_image_rise_px": 12.512000000000043,
+      "scaled_norm_of_median_world_delta_change_cm": 9.233765556682663
+    }
+  },
+  "source_segment_change_percent": {
+    "right_thigh_cm": -9.210616307897524,
+    "right_shin_cm": 2.9812333961059867,
+    "shoulder_cm": -2.7913379245032566
+  },
+  "quality": {
+    "selected_frames": 16,
+    "selected_geometry_valid": 16,
+    "all_geometry_valid": 20,
+    "image_confidence_rejections": [
+      1,
+      22
+    ],
+    "all_pair_integrity_checks_passed": 22
+  },
+  "visual_review": {
+    "representatives": [
+      {
+        "n": 4,
+        "id": 109449710,
+        "pose": "both feet on floor"
+      },
+      {
+        "n": 11,
+        "id": 109470905,
+        "pose": "own right foot on box; left on floor"
+      },
+      {
+        "n": 18,
+        "id": 109492061,
+        "pose": "both feet back on floor"
+      }
+    ],
+    "observations": [
+      "Full body, both feet and suitcase visible in selected phases.",
+      "Physical right mapped to saved model indices 27/29/31; points follow the raised foot rather than staying on the floor.",
+      "Representative frame 11 toe point 31 falls slightly below the visible foot onto the box region. This is qualitative visual review, not independent pixel ground truth.",
+      "Original PNGs, standalone HTML and analytical overlay figure remain ignored local artifacts."
+    ]
+  },
+  "limitations": [
+    "20 cm is user-measured support height; no independent anatomical ankle height measurement.",
+    "Camera intrinsics, pitch, foot angle and per-frame foot depth not measured; current forward step is not established by an older 3 cm report.",
+    "2D visual plausibility does not certify metric accuracy or exclude perspective.",
+    "No comparison of Windows voice timestamps with phone monotonic timestamps.",
+    "No GPU delegate proof, capture-load/long-run/background-stop acceptance, live timeout/UDP/FBT/HMD/remote acceptance.",
+    "Earlier same-day receiver attempt received zero packets; ACK cause unresolved. Photo-only capture does not require ACK."
+  ],
+  "prior_smoke": {
+    "zip_sha256": "052e165e67f88a062881f17ff9f6ece89be96de36585c87175b3206fb0d349a7",
+    "pairs_verified": 3,
+    "body": "head/upper-body only",
+    "calibrator_rejections": "3/3 image_confidence, zero transforms",
+    "height_evidence": false
+  }
+}

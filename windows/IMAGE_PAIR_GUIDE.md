@@ -1,6 +1,6 @@
 # 同一影格影像／landmarks 對照工具
 
-目前狀態：App 0.2.0 與 Windows 檢視工具已完成自動檢查；**真手機 PNG 擷取、GPU 回呼影像與匯出流程仍待實測**。這是高度低估的診斷工具，不會將手機資料接到 VRChat tracker。
+目前狀態：App 0.2.0 與 Windows 檢視工具已完成自動檢查；**Samsung 真手機 PNG 擷取、ZIP 匯出與 Windows 匯入已確認**。22 組新影像完整拍到右腳箱面動作；[離線影像調查](IMAGE_PAIR_REVIEW_2026-11-06.md) 仍重現高度低估。GPU delegate、保存負載與背景停止仍待實測。這是高度低估的診斷工具，不會將手機資料接到 VRChat tracker。
 
 ## 手機端：預設關閉、明確啟用
 
@@ -43,6 +43,6 @@ App 的本機配對與 UDP 共用 `PoseFrameJson`，維持協定 version 1，新
 
 ## 已完成與待驗證
 
-- **已完成：** APK 建置／lint、獨立 Kotlin 取樣與儲存檢查、Kotlin 合成 PNG ZIP → Windows 讀取／HTML 產生、Windows 69 項測試（本機 Node 可用時另驗證檢視頁座標與非同步切換邏輯）。
-- **待驗證：** Samsung 實機的 Bitmap 擷取、GPU 回呼、保存負載、按鈕／背景停止、ZIP 匯出與真人點位正確性。合成 JVM PNG 與 Node 的 DOM／Canvas 模型不能替代這些驗收。
+- **已完成：** APK 建置／lint、獨立 Kotlin 取樣與儲存檢查、Kotlin 合成 PNG ZIP → Windows 讀取／HTML 產生、Windows 69 項測試（本機 Node 可用時另驗證檢視頁座標與非同步切換邏輯）；Samsung App 0.2.0 手動擷取／ZIP 匯出／Windows 匯入已有真人影像證據。純本機影像流程不需要 Wi-Fi 或 ACK。
+- **待驗證：** GPU delegate、保存負載、按鈕停止競態／背景停止與真人點位精度。實際封包沒有 delegate 欄位，不能僅憑模型預設推定 GPU 通過；合成 JVM PNG 與 Node 的 DOM／Canvas 模型不能替代上述實機驗收。每 3 秒的照片也不能驗證即時失追策略。
 - **仍未通過：** 手機動作公尺高度；本工具不改校正／地面／倍率，也不代表 FBT、HMD 對齊、遠端同步或 Unity smoke test 通過。

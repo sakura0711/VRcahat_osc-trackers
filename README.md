@@ -8,8 +8,8 @@
 | --- | --- |
 | VR 模式 Phase 0 | **通過**。AnyaDance 的 SteamVR trackers 停用後，合成 OSC 髖與雙腳完成校正；本機及遠端玩家都看到兩輪右腳抬起／放下。遠端玩家不知道切換時間與腳別。 |
 | Phase 1 | OSC Vector3 encoder 與可指定髖／左右腳 ID 的 `TrackerOutput` 已完成本機 UDP 測試。 |
-| 手機到 VRChat Tracker | **尚未接通**。前鏡頭離線複驗已確認修正後的左右腳與右轉方向。最新同影格 2D／3D 右腳測試已保存並離線重播，但已知 20 cm 箱面只估出 6.9–7.8 cm 踝點增量；來源 3D 變化也偏小，尺度驗證仍未通過。手機 OSC 保持停用；精度、長時間穩定性及 HMD 對齊仍待解決。 |
-| 選用影像對照工具 | App **0.2.0** 的手動同影格 PNG／landmarks 保存與 ZIP 匯出、Windows 離線疊點頁已完成自動檢查；69 項 Windows 測試及 APK 建置／lint 通過。手機更新及實機擷取／匯出仍待確認，預設不保存影像、不啟用 OSC。 |
+| 手機到 VRChat Tracker | **尚未接通**。前鏡頭離線複驗已確認修正後的左右腳與右轉方向。較早的同影格 2D／3D 右腳紀錄已離線重播，20 cm 箱面只估出 6.9–7.8 cm 踝點增量；後續含照片的新輪仍只估出約 5.1 cm，尺度驗證未通過。兩輪演算法未改、取樣不同，不能當作改善或退步。手機 OSC 保持停用；精度、長時間穩定性及 HMD 對齊仍待解決。 |
+| 選用影像對照工具 | App **0.2.0** 的真手機擷取／ZIP 匯出與 Windows 匯入已確認；新 22 組影像完整拍到右腳上箱與放回。離線估計仍只上升約 **5.1 cm**，2D 有局部偏差、3D 段長隨姿勢改變，根因尚未定。詳見 [影像調查](windows/IMAGE_PAIR_REVIEW_2026-11-06.md)。既有 69 項 Windows 測試及 APK 建置／lint 通過；GPU delegate、保存負載與背景停止仍待實測。預設不保存影像、不啟用 OSC。 |
 | SteamVR `-202` | 仍在。VRChat 的 VR 畫面與選單可用；AnyaDance 的桌面顯示路徑是待驗證的可能原因。Headset Window 保持 **2560×1440**。 |
 | 其他 | 純 Desktop 的原生 FBT 未通過；長時間穩定性與手機姿勢的遠端同步未驗證。Unity smoke test 受 License Client IPC timeout 阻擋。 |
 
