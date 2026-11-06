@@ -56,6 +56,6 @@
 
 Android 隔離對照工具已備妥：獨立 `replay` App 0.1.0，MediaPipe 1.0.0、固定 Lite／Full、CPU／GPU 的 IMAGE／VIDEO 選項；無網路與相機權限，不覆蓋相機 App。已用同一批 22 張在唯讀 API 35 x86_64 模擬器完成 88 次 CPU 原生推論，IMAGE 選定 16 張全有效，Lite 上升 6.00／6.58 cm、Full 16.24／16.29 cm；共用手機校正的 Full 為 14.28／14.25 cm。VIDEO 前站姿兩者均 0／5 有效、獨立校正失敗，不當作有效高度比較。詳見 [回放指南與限制](android/REPLAY_GUIDE.md)。APK／lint、Kotlin 核心與跨語言交換、Windows 84 項已完成；手機未安裝，GPU／檔案選取／實體機生命週期仍待驗證。這不是手機 LIVE_STREAM 重建或精度驗收。
 
-**目前下一步（使用者指定的探索測試）：** 已新增 [ZIP 三姿勢回放器](windows/TRACKER_REPLAY_GUIDE.md)，直接沿用已存手機原始 Lite landmarks，準備「站姿 → 右腳上箱 → 放回」，不放大高度、不換模型、不更動手機。新增 11 項測試、完整 Windows 95 項通過；真 ZIP 的不送 OSC 檢查完成。先語音通知並等待使用者就位，再以明確角色 ID／ZIP 雜湊啟用有限回放，觀察目前低估幅度對 VRChat IK 的實際影響。這是已知精度限制下的探索，不以恰好 20 cm 作開始觀察的門檻，也不宣稱手機 FBT 驗收。預設固定站姿旋轉，先觀察位置效果。此回放尚未向遊戲送出。
+**目前狀態（2026-11-06 遊戲內探索）：** [ZIP 三姿勢回放器](windows/TRACKER_REPLAY_GUIDE.md) 的原始手機資料與使用者要求的臨時 20 cm 放大診斷均已送出；使用者回報數值變化但模型沒有動。後續依使用者要求重送 Phase 0 成功時的合成探針數值；這次 VRChat 記錄三個 OSC tracker 及角色映射，使用者看到 tracker 3 數值變化，但模型仍沒有動。21:06:34 校正時日誌出現 `ERROR: You are trying to calibrate in seated play mode!`；同時存在角色映射，不能把映射當作已成功驅動 Avatar。探針逾時後重啟，動作前校正狀態也待確認。坐姿提示是重要線索，尚未證明是唯一原因或已修復。詳見 [實驗紀錄](windows/TEST_RESULTS.md)。
 
 即時 receiver 的 tracker 模式仍保持未整合；後續須量化公尺／角度精度、腳部 yaw／地面偏移、HMD 絕對對齊及失追／停止行為。可沿用 CPU IMAGE 比對設計隔離實驗，不例行重做左右方向或 Phase 0。VIDEO 不能用稀疏照片當成原始串流。獨立腳點真值、相機內參／俯仰與腳部深度仍缺少；後鏡頭與超廣角尚未實作，切換後須獨立驗證。需要更新 App 或真人配合前先語音通知。

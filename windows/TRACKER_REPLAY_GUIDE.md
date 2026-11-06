@@ -48,4 +48,4 @@ python -B tracker_replay.py @replayArgs
 
 這三張的右踝增量為 6.54／6.12 cm；和先前整段中位數的約 5.1 cm 是不同統計，並非算法改善。左腳與水平位置也有估計變化，並未只改右腳 y；因此遊戲中可能同時出現左右／深度位移。完整精度留在本機計畫。公尺精度、HMD 絕對對齊、本機 IK 與遠端效果仍待驗證。
 
-`python -B -m unittest discover -v`：本次 **95 項通過**，含新增 11 項回放檢查。新 UDP 測試只使用隔離的 loopback 動態埠；沒有向 VRChat 發送。真實 ZIP 的預覽也已完成，手機 App 未修改；尚未做本次遊戲內測試。
+`python -B -m unittest discover -v`：回放器階段 **95 項通過**，含新增 11 項回放檢查。新 UDP 自動測試只使用隔離的 loopback 動態埠。後續原始 ZIP 回放及使用者指定的臨時放大診斷都已在 VRChat 發送；使用者回報模型沒有動。另重送 Phase 0 合成探針，tracker 數值有變但模型仍未動；VRChat 校正時記錄坐姿模式錯誤。不能由目前結果判定手機 6 cm 幅度對 IK 的影響；[本輪實驗紀錄](TEST_RESULTS.md) 保留細節。
