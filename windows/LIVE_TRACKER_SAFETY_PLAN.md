@@ -1,13 +1,13 @@
 # 即時手機 Tracker：安全、失追與平滑計畫
 
-**狀態：2026-11-06，receiver 的 tracker 輸出、安全門檻與自動測試已完成；平滑、速度限制與失追後過渡仍在規劃中。** 手機即時、VRChat 遊戲內與遠端效果尚未驗收。重新校正初始預設 250 ms，不是已驗證的最佳值。
+**狀態：2026-11-06，receiver 的 tracker 輸出、安全門檻與自動測試已完成；本機手機即時 OSC 與 Avatar 動作已初驗。** 平滑、速度限制與失追後過渡仍在規劃中；即時腳別、遠端效果、精度與長時間穩定性尚未驗收。重新校正初始預設 250 ms，不是已驗證的最佳值。
 
 `pose_receiver.py --output trackers` 要求當次確認的三個 ID、髖高、鏡像、左右標籤、前向與 yaw；預設 `none` 不送 OSC，舊 `--osc` 保留六參數。接收端只有完整可信、已校正的三角色 transform 才發送。低信心、無人、缺點或亂序不重設最後有效時間；失追與新 session 清除校正及最後姿勢。`T=--tracker-loss-ms` 可調，預設 250 ms、上限 5000 ms；`H=--tracker-hold-ms` 獨立，預設 0、上限 `min(T,250 ms)`。保守的每角色位移 0.5 m、yaw 最短角 90° 突變檢查會要求重校正；這些門檻尚未用真人即時資料調校。輸出錯誤會關閉 transport。自動測試含隔離 UDP，不向 VRChat 發送。
 
 ## 已證實
 
 1. `tracker_pose.py` 已對必要點低信心、缺失與不合理座標拒絕輸出；`TrackerCalibrationConfig.loss_timeout_ms` 在程式設定中預設為 250 ms，超時清除校正。現有手機 tracker 預覽 CLI 沒有提供此門檻參數。
-2. `pose_receiver.py` 預設不送 OSC；`--osc` 明確啟用六項 Avatar parameters，**不是** tracker 模式。`--output trackers` 已經透過 `tracker_bridge.py` 整合 `tracker_output.py`，只通過自動測試。
+2. `pose_receiver.py` 預設不送 OSC；`--osc` 明確啟用六項 Avatar parameters，**不是** tracker 模式。`--output trackers` 已經透過 `tracker_bridge.py` 整合 `tracker_output.py`，通過自動測試與一次本機即時觀察。
 3. 在 VR 模式、合成 HMD／雙控制器、AnyaDance 自帶 trackers 停用的條件下，已存手機 ZIP 的靜態姿勢在本機可見角色右腳抬起。每張照片間隔約 3 秒，不代表即時串流或連續動作通過。2026-11-06 該輪映射 1＝髖、3＝左腳、4＝右腳；下次不得假設相同。
 4. 原始 ZIP 所選影格的估計右踝增量約 6.54 cm，使用者確認視覺上清楚，將未達 20 cm 對**本次視覺可見性**列為低風險；絕對公尺精度和其他動作仍未驗證。不以達到 20 cm 作為安全整合的門檻，也不自動放大高度。
 
@@ -37,4 +37,4 @@
 4. 視需要以已存的不同輪高頻 JSONL 進行離線檢查，不能把它與照片 ZIP 當同一輪，也不能由稀疏照片推斷即時延遲。程式變更後在 `windows` 執行 `python -B -m unittest discover -v`，並報告實際結果。
 5. 自動檢查通過後仍不宣稱遊戲內已驗收。需要使用者更新 App 或配合實機前，先依其當輪指示以語音通知、預留就位時間；若當輪明確要求不用語音則遵照。真人測試排成完整一輪，結束後才請使用者回答。
 
-後續驗證須確認 VRChat 自身為站姿模式、FBT 開關可用且目前 tracker ID 映射明確；前次的坐姿模式錯誤、探針逾時與新一輪成功紀錄見 [排查紀錄](FBT_DIAGNOSTIC_2026-11-06.md) 及 [實驗結果](TEST_RESULTS.md)。純 Desktop FBT、手機即時輸出、遠端手機動作與長時間穩定性仍待驗證；Unity smoke 仍受 License Client IPC timeout 阻擋。
+後續驗證須確認 VRChat 自身為站姿模式、FBT 開關可用且目前 tracker ID 映射明確；前次的坐姿模式錯誤、探針逾時與新一輪成功紀錄見 [排查紀錄](FBT_DIAGNOSTIC_2026-11-06.md) 及 [實驗結果](TEST_RESULTS.md)。純 Desktop FBT、遠端手機動作與長時間穩定性仍待驗證；Unity smoke 仍受 License Client IPC timeout 阻擋。

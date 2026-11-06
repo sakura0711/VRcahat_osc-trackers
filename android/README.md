@@ -1,6 +1,6 @@
 # VRChat Track — Android 單手機 MVP
 
-目前已實作手機前鏡頭、MediaPipe Pose Landmarker、關鍵點疊加、CPU／GPU 分段計時與手機到 Windows 的 Wi-Fi UDP 傳輸。**手機姿勢尚未轉成 VRChat 原生 OSC Tracker 輸出。** 虛擬 HMD 的合成 OSC Tracker Phase 0 已通過本機及遠端驗收；請以 [主計畫](../OSC_TRACKER_MVP_PLAN.md) 的狀態為準。手機經 receiver 到 VRChat 的完整流程仍待驗證。
+目前已實作手機前鏡頭、MediaPipe Pose Landmarker、關鍵點疊加、CPU／GPU 分段計時與手機到 Windows 的 Wi-Fi UDP 傳輸。Windows 的 `--output trackers` 已把手機姿勢送到 VRChat 原生 OSC Tracker；2026-11-06 本機即時測試中，使用者確認 OSC Debugger 更新且 Avatar 動作。虛擬 HMD 的合成 OSC Tracker Phase 0 另已通過本機及遠端驗收；手機姿勢的遠端、精度與長時間效果仍待驗證，詳見 [主計畫](../OSC_TRACKER_MVP_PLAN.md)。
 
 ## 已固定的基線
 
@@ -120,7 +120,7 @@ $src = 'app\src\main\java\com\vrchattrack\singlephone'
 ## 還未加入
 
 - Android 端正式校正、角度轉換與濾波；目前由 Windows 實驗性處理
-- 手機經 Windows receiver 驅動 VRChat Avatar 的完整流程與長時間驗證
+- 手機經 Windows receiver 驅動 VRChat Avatar 的遠端與長時間驗證；本機動作已初驗
 
 這些項目會依 PROJECT_PLAN.md 的第 2 至第 5 階段依序加入。
 

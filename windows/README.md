@@ -86,7 +86,7 @@ python -B soak_loopback.py --duration 600 --fps 15
 
 ## Phase 1：TrackerOutput 元件
 
-`tracker_output.py` 提供 OSC Vector3 編碼與只送到本機的 `TrackerOutput`。`pose_receiver.py` 的 `--output trackers` 已透過 `tracker_bridge.py` 使用它；呼叫端須明填當次確認的 `hip`、`left_foot`、`right_foot` 相異 ID（1–8）和校正設定。3／4 曾互換，不可沿用上次映射。這項整合只通過自動測試，**尚未通過手機即時或 VRChat 驗收**。
+`tracker_output.py` 提供 OSC Vector3 編碼與只送到本機的 `TrackerOutput`。`pose_receiver.py` 的 `--output trackers` 已透過 `tracker_bridge.py` 使用它；呼叫端須明填當次確認的 `hip`、`left_foot`、`right_foot` 相異 ID（1–8）和校正設定。3／4 曾互換，不可沿用上次映射。2026-11-06 本機手機即時測試已確認 OSC Debugger 更新與 Avatar 動作；遠端、腳別精度和長時間穩定性尚未驗收。
 
 `--output none` 是預設，沒有 OSC socket；`--output parameters` 與既有 `--osc` 都走六個 Avatar 參數。`--osc` 和 `--output` 不能同時使用。即時 tracker 指令範例（數值只示意已知前鏡頭設定；啟用前須重新確認當次 ID、手機左右方向、髖高和 yaw）：
 
